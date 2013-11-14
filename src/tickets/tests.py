@@ -95,12 +95,14 @@ class AddIncidentFormTest(TestCase):
         self.client = Client(enforce_csrf_checks = True)
         self.user = User.objects.create_user('user', 'no@email.com', 'password')
         self.client.login(username = 'user', password = 'password')
-        models.Department.objects.create(name = 'dep'),
-        models.Area.objects.create(name = 'area'),
-
-    def test_empty_form(self):
+        self.department = models.Department(name = 'dep')
+        self.department.save()
+        self.area = models.Area(name = 'area')
+        self.area.save()
         response = self.client.get(reverse('incident-add-view'))
-        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        self.csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+
+    def test_filled_form(self):
         response = self.client.post(reverse('incident-add-view'), {
             'theme': 'Theme',
             'description': 'Some text',
@@ -108,8 +110,34 @@ class AddIncidentFormTest(TestCase):
             'room': '123',
             'phone': '111',
             'pc': '4567',
-            'department': 1,
-            'area': 1,
-            'csrfmiddlewaretoken': csrf_token
+            'department': self.department.pk,
+            'area': self.area.pk,
+            'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertEqual(response.context['errors'], [])
+
+    def test_partially_filled_form(self):
+        response = self.client.post(reverse('incident-add-view'), {
+            'theme': 'Theme',
+            'description': 'Some text',
+            'fio': u'Иванов А.А.',
+            #'room': '123',
+            'phone': '111',
+            'pc': '4567',
+            'department': 1,
+            'area': 1,
+            'csrfmiddlewaretoken': self.csrf_token
+        })
+        self.assertEqual(response.context['errors'], [])
+
+    def test_incorrect_form(self):
+        response = self.client.post(reverse('incident-add-view'), {
+            'theme': 'Theme',
+            'description': 'Some text',
+            'fio': u'Иванов А.А.',
+            'pc': '4567',
+            'department': 1,
+            'area': 1,
+            'csrfmiddlewaretoken': self.csrf_token
+        })
+        self.assertEqual(len(response.context['errors']), 1)
