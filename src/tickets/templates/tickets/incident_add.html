@@ -1,0 +1,59 @@
+{% extends "tickets/base.html" %}
+
+{% block body %}
+    <center>
+        {% for error in errors %}
+            <div class="alert">
+                {{ error }}
+            </div>
+        {% endfor %}
+    </center>
+    {{ form.non_field_errors }}
+    <form action="." method="POST">{% csrf_token %}{% csrf_token %}
+        <div class="control-group">
+            <table>
+                <tr>
+                    <td class="span6">
+                        {{ form.area.label_tag }} {{ form.area }}
+                    </td>
+                    <td class="span6">
+                        {{ form.department.label_tag }} {{ form.department }}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="span6">
+                        {{ form.fio.label_tag }} {{ form.fio }}
+                    </td>
+                    <td class="span6">
+                        {{ form.phone.label_tag }} {{ form.phone }}
+                    </td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <td class="span6">
+                        {{ form.pc.label_tag }} {{ form.pc }}
+                    </td>
+                    <td class="span6">
+                        {{ form.room.label_tag }} {{ form.room }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="control-group">
+            <table>
+                <tr>
+                    <td>
+                        {{ form.theme.label_tag }} {{ form.theme }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        {{ form.description.label_tag }} {{ form.description }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <center><input type="submit" class="btn btn-primary span4" value="Сохранить" name="save"/></center>
+    </form>
+{% endblock %}
