@@ -1,11 +1,24 @@
 # -*- coding: utf-8 -*-
 from django.http import HttpResponse
+from django.http import HttpResponseNotFound
 from django.shortcuts import render, redirect
 from django.core.context_processors import csrf
 from django.core.urlresolvers import reverse
+from django.core.paginator import Paginator
+from django.core.paginator import EmptyPage
 import django.contrib.auth as auth
 from .models import Incident, IncidentHistory, Status, Area, Department
 from .forms import AddIncidentForm
+
+
+def paginate_records(records_list, page_id):
+     paginator = Paginator(records_list, 20)
+     try:
+         paginated_list = paginator.page(page_id)
+     except EmptyPage:
+         # if page is out of range, show last one
+         paginated_list = paginator.page(paginator.num_pages)
+     return paginated_list
 
 
 def login(request):
@@ -34,9 +47,25 @@ def logout(request):
     auth.logout(request)
     return redirect(reverse('login-view'))
 
-def main(request, page = None):
+def main(request, page = 1):
     if request.user.is_authenticated():
+        try:
+            page = int(page)
+        except:
+            return HttpResponseNotFound()
         context = {}
+        try:
+            # Administrators can see all incidents
+            group_admin = auth.models.Group.objects.get(name = 'Administrators')
+        except auth.models.Group.DoesNotExist:
+            context['errors'] = [u'Группы пользователей не созданы.',]
+            return render(request, 'tickets/base.html', context)
+        if request.user in group_admin.user_set.all():
+            incidents = Incident.objects.all()
+        else:
+            incidents = Incident.objects.filter(user = request.user)
+        # show only subset of all incidents
+        context['incidents'] = paginate_records(incidents, page)
         return render(request, 'tickets/main.html', context)
     else:
         return redirect(reverse('login-view'))

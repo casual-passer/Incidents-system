@@ -1,0 +1,33 @@
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <td>#</td>
+            <td>Статус</td>
+            <td>Тематика</td>
+            <td>Последнее изменение</td>
+            <td>Тема</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for incident in incidents %}
+            <tr>
+                <td class="span1">
+                    {{ incident.pk }}
+                </td>
+                <td class="span1">
+                    <a href="/incident/history/{{ incident.id }}/">
+                    {{ incident.status }}
+                </td>
+                <td class="span2">
+                    {{ incident.area }}
+                </td>
+                <td class="span2">
+                    {{ incident.created_at|date:"d-m-Y G:i:s" }}
+                </td>
+                <td class="span6">
+                    <a href="/incident/{{ incident.id }}/">{{ incident.theme }}</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

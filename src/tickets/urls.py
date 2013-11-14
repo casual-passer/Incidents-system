@@ -9,7 +9,7 @@ urlpatterns = patterns('tickets.views',
     url(r'^logout/$', 'logout', name = 'logout-view'),
 
     url(r'^main/$', 'main', name = 'main-view'),
-    #url(r'^main/(?P<page>\d+)$', 'main', name = 'main-view'),
+    url(r'^main/(?P<page>\d+)$', 'main', name = 'main-view'),
 
     #url(r'^incident/(?P<incident_id>\d+)/$', 'incident', name = 'incident-view'),
     #url(r'^incident/(?P<incident_id>\d+)/history/$', 'incident_history', name = 'incident-history-view'),

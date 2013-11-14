@@ -1,14 +1,6 @@
 {% extends "tickets/base.html" %}
 
 {% block body %}
-    <center>
-        {% for error in errors %}
-            <div class="alert">
-                {{ error }}
-            </div>
-        {% endfor %}
-    </center>
-    {{ form.non_field_errors }}
     <form action="." method="POST">{% csrf_token %}{% csrf_token %}
         <div class="control-group">
             <table>

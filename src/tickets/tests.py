@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.test import Client
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
 
 import models
 
@@ -28,7 +29,7 @@ class ModelsTest(TestCase):
         self.assertEqual(hasattr(incident, 'status'), False)
         incident.save()
         self.assertEqual(hasattr(incident, 'status'), True)
-        self.assertEqual(incident.status.name, u'Default status')
+        self.assertEqual(incident.status.pk, 1)
 
     def test_incident_create(self):
         incident = models.Incident(
@@ -141,3 +142,69 @@ class AddIncidentFormTest(TestCase):
             'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertEqual(len(response.context['errors']), 1)
+
+
+class GroupsTest(TestCase):
+
+    def setUp(self):
+        g1 = Group(name = 'Administrators')
+        g2 = Group(name = 'Users')
+        g1.save()
+        g2.save()
+        u1 = User.objects.create_user('admin', 'no@no.com', 'admin')
+        u2 = User.objects.create_user('user', 'no@no.com', 'user')
+        u1.save()
+        u2.save()
+        g1.user_set.add(u1)
+        g2.user_set.add(u2)
+        self.area = models.Area(name = u'IT')
+        self.area.save()
+        self.department = models.Department(name = u'Отдел IT')
+        self.department.save()
+
+    def test_groups_permissions(self):
+        group = Group.objects.get(name = 'Administrators')
+        self.client.login(username = 'user', password = 'user')
+        user = User.objects.get(username = 'user')
+        self.assertEqual(self.client.session['_auth_user_id'], user.pk)
+        # user creates incident
+        incident = models.Incident(
+            theme = u'From user',
+            area = self.area,
+            department = self.department,
+            user = user
+        )
+        incident.save()
+        self.client.logout()
+        self.client.login(username = 'admin', password = 'admin')
+        user = User.objects.get(username = 'admin')
+        self.assertEqual(self.client.session['_auth_user_id'], user.pk)
+        # admin creates incident
+        incident = models.Incident(
+            theme = u'From admin',
+            area = self.area,
+            department = self.department,
+            user = user
+        )
+        incident.save()
+        response = self.client.get(reverse('main-view'))
+        self.assertEqual(len(response.context['incidents']), 2)
+        self.client.logout()
+        # user must see only one incident
+        self.client.login(username = 'user', password = 'user')
+        user = User.objects.get(username = 'user')
+        self.assertEqual(self.client.session['_auth_user_id'], user.pk)
+        response = self.client.get(reverse('main-view'))
+        self.assertEqual(len(response.context['incidents']), 1)
+        self.client.logout()
+
+class NoGroupsTest(TestCase):
+
+    def setUp(self):
+        User.objects.create_user('user', 'no@no.com', 'user')
+
+    def test_no_groups(self):
+        self.client.login(username = 'user', password = 'user')
+        response = self.client.get(reverse('main-view'))
+        self.assertEqual(response.context['errors'], [u'Группы пользователей не созданы.'])
+        self.client.logout()

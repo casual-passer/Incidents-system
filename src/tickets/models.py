@@ -55,8 +55,9 @@ class Incident(AbstractModel):
         if not self.id:
             in_db = False
             if not hasattr(self, 'status'):
-                (self.status, created) = Status.objects.get_or_create(pk = 0, defaults = {'name': u'Default status'})
+                (self.status, created) = Status.objects.get_or_create(pk = 1, defaults = {'name': u'Default status'})
         super(Incident, self).save(*args, **kwargs)
+        # if incident did not exist in database, save first status change in incidenthistory table
         if not in_db:
             IncidentHistory.objects.create(incident = self, modified_at = self.created_at, status = self.status)
 
@@ -64,7 +65,7 @@ class Incident(AbstractModel):
         return self.theme
 
     class Meta:
-        ordering = ('-created_at', )
+        ordering = ('-pk', '-created_at', )
 
 
 class IncidentHistory(models.Model):
