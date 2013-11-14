@@ -108,3 +108,11 @@ def incident_add(request):
         return render(request, 'tickets/incident_add.html', context)
     else:
         return redirect(reverse('login-view'))
+
+def incident_history(request, incident_id = None):
+    context = {}
+    return render(request, 'tickets/incident_history.html', context)
+
+def incident(request, incident_id = None):
+    context = {}
+    return render(request, 'tickets/incident.html', context)
