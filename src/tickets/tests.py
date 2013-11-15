@@ -208,3 +208,61 @@ class NoGroupsTest(TestCase):
         response = self.client.get(reverse('main-view'))
         self.assertEqual(response.context['errors'], [u'Группы пользователей не созданы.'])
         self.client.logout()
+
+class IncidentStatusTest(TestCase):
+
+    def setUp(self):
+        User.objects.create_user('user', 'no@no.com', 'user')
+        self.client = Client(enforce_csrf_checks = True)
+        self.client.login(username = 'user', password = 'user')
+        self.area = models.Area(name = u'IT')
+        self.area.save()
+        self.department = models.Department(name = u'Отдел IT')
+        self.department.save()
+        self.statuses = [
+            models.Status(name = u'Открыт'),
+            models.Status(name = u'В работе'),
+            models.Status(name = u'Закрыт')
+        ]
+        for s in self.statuses:
+            s.save()
+
+    def tearDown(self):
+        self.client.logout()
+
+    def _add_incident(self):
+        response = self.client.get(reverse('incident-add-view'))
+        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        response = self.client.post(reverse('incident-add-view'), {
+            'theme': 'Theme',
+            'description': 'Some text',
+            'fio': u'Иванов А.А.',
+            'room': '123',
+            'phone': '111',
+            'pc': '4567',
+            'department': self.department.pk,
+            'area': self.area.pk,
+            'csrfmiddlewaretoken': csrf_token
+        })
+
+    def test_status_change(self):
+        self._add_incident()
+        self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 1)
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(response.context['form']['status'].field.initial, self.statuses[0])
+        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'status': self.statuses[1].pk,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
+        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        self.assertEqual(response.context['form']['status'].field.initial, self.statuses[1])
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'status': self.statuses[2].pk,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(response.context['form']['status'].field.initial, self.statuses[2])
+        self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 3)
+

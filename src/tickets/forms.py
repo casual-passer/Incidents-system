@@ -23,3 +23,18 @@ class AddIncidentForm(ModelForm):
             'theme': forms.TextInput(attrs = {'class': 'span12'}),
             'description': forms.Textarea(attrs = {'class': 'span12'})
         }
+
+class ModifyIncidentForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        status = kwargs.pop('status')
+        super(ModifyIncidentForm, self).__init__(*args, **kwargs)
+        # set current status in form
+        self.fields['status'].initial = status
+
+    class Meta:
+        model = Incident
+        fields = ['status']
+        labels = {
+            'status': u'Статус'
+        }

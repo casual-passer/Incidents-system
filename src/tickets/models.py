@@ -59,7 +59,7 @@ class Incident(AbstractModel):
         super(Incident, self).save(*args, **kwargs)
         # if incident did not exist in database, save first status change in incidenthistory table
         if not in_db:
-            IncidentHistory.objects.create(incident = self, modified_at = self.created_at, status = self.status)
+            IncidentHistory.objects.create(incident = self, modified_at = self.created_at, status = self.status, user = self.user)
 
     def __unicode__(self):
         return self.theme
@@ -73,4 +73,8 @@ class IncidentHistory(models.Model):
     incident = models.ForeignKey(Incident)
     modified_at = models.DateTimeField()
     status = models.ForeignKey(Status)
+    user = models.ForeignKey(User)
+
+    def __unicode__(self):
+        return unicode(self.incident.pk) + ': ' + unicode(self.status.name)
 

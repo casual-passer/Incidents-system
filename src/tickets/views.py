@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 from django.http import HttpResponse
-from django.http import HttpResponseNotFound
-from django.shortcuts import render, redirect
+from django.http import Http404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.core.context_processors import csrf
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage
 import django.contrib.auth as auth
+from django.utils.timezone import utc
+
 from .models import Incident, IncidentHistory, Status, Area, Department
-from .forms import AddIncidentForm
+from .forms import AddIncidentForm, ModifyIncidentForm
+
+import datetime
 
 
 def paginate_records(records_list, page_id):
@@ -52,7 +56,7 @@ def main(request, page = 1):
         try:
             page = int(page)
         except:
-            return HttpResponseNotFound()
+            raise Http404
         context = {}
         try:
             # Administrators can see all incidents
@@ -114,5 +118,27 @@ def incident_history(request, incident_id = None):
     return render(request, 'tickets/incident_history.html', context)
 
 def incident(request, incident_id = None):
+    try:
+        incident_id = int(incident_id)
+    except:
+        raise Http404
+    incident = get_object_or_404(Incident, pk = incident_id)
     context = {}
+    context.update(csrf(request))
+    context['form'] = ModifyIncidentForm(request.POST or None, status = incident.status)
+    if request.method == 'POST':
+        if context['form'].is_valid():
+            data = context['form'].cleaned_data
+            status = data['status']
+            incident.status = status
+            incident.save()
+            IncidentHistory.objects.create(
+                incident = incident,
+                modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
+                status = status,
+                user = request.user
+            )
+            return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
+    else: # not POST
+        context['incident'] = incident
     return render(request, 'tickets/incident.html', context)
