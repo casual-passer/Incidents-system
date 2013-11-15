@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.context_processors import csrf
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator
-from django.core.paginator import EmptyPage
+from django.core.paginator import EmptyPage, PageNotAnInteger
 import django.contrib.auth as auth
 from django.utils.timezone import utc
 
@@ -16,13 +16,15 @@ import datetime
 
 
 def paginate_records(records_list, page_id):
-     paginator = Paginator(records_list, 20)
-     try:
-         paginated_list = paginator.page(page_id)
-     except EmptyPage:
-         # if page is out of range, show last one
-         paginated_list = paginator.page(paginator.num_pages)
-     return paginated_list
+    paginator = Paginator(records_list, per_page = 20)
+    try:
+        paginated_list = paginator.page(page_id)
+    except EmptyPage:
+        # if page is out of range, show last one
+        paginated_list = paginator.page(paginator.num_pages)
+    except PageNotAnInteger:
+        paginated_list = paginator.page(1)
+    return paginated_list
 
 
 def login(request):

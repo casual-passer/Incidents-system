@@ -209,6 +209,22 @@ class NoGroupsTest(TestCase):
         self.assertEqual(response.context['errors'], [u'Группы пользователей не созданы.'])
         self.client.logout()
 
+
+def _add_incident(self):
+    response = self.client.get(reverse('incident-add-view'))
+    csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+    response = self.client.post(reverse('incident-add-view'), {
+        'theme': 'Theme',
+        'description': 'Some text',
+        'fio': u'Иванов А.А.',
+        'room': '123',
+        'phone': '111',
+        'pc': '4567',
+        'department': self.department.pk,
+        'area': self.area.pk,
+        'csrfmiddlewaretoken': csrf_token
+    })
+
 class IncidentStatusTest(TestCase):
 
     def setUp(self):
@@ -230,23 +246,8 @@ class IncidentStatusTest(TestCase):
     def tearDown(self):
         self.client.logout()
 
-    def _add_incident(self):
-        response = self.client.get(reverse('incident-add-view'))
-        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
-        response = self.client.post(reverse('incident-add-view'), {
-            'theme': 'Theme',
-            'description': 'Some text',
-            'fio': u'Иванов А.А.',
-            'room': '123',
-            'phone': '111',
-            'pc': '4567',
-            'department': self.department.pk,
-            'area': self.area.pk,
-            'csrfmiddlewaretoken': csrf_token
-        })
-
     def test_status_change(self):
-        self._add_incident()
+        _add_incident(self)
         self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 1)
         response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
         self.assertEqual(response.context['form']['status'].field.initial, self.statuses[0])
@@ -266,3 +267,39 @@ class IncidentStatusTest(TestCase):
         self.assertEqual(response.context['form']['status'].field.initial, self.statuses[2])
         self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 3)
 
+class TestMainPagePagination(TestCase):
+
+    def setUp(self):
+        User.objects.create_user('user', 'no@no.com', 'user')
+        self.client = Client(enforce_csrf_checks = True)
+        self.client.login(username = 'user', password = 'user')
+        self.area = models.Area(name = u'IT')
+        self.area.save()
+        self.department = models.Department(name = u'Отдел IT')
+        self.department.save()
+        Group.objects.create(name = 'Administrators')
+
+    def test_pagination(self):
+        response = self.client.get(reverse('main-page-view', kwargs = {'page': 1}))
+        self.assertEqual(len(response.context['incidents'].object_list), 0)
+        _add_incident(self)
+        response = self.client.get(reverse('main-page-view', kwargs = {'page': 1}))
+        self.assertEqual(len(response.context['incidents'].object_list), 1)
+        for i in range(19):
+            _add_incident(self)
+        self.assertEqual(models.Incident.objects.count(), 20)
+        response = self.client.get(reverse('main-page-view', kwargs = {'page': 1}))
+        self.assertEqual(len(response.context['incidents'].object_list), 20)
+        response = self.client.get(reverse('main-page-view', kwargs = {'page': 2}))
+        # page is out of range
+        self.assertEqual(len(response.context['incidents'].object_list), 20)
+        _add_incident(self)
+        response = self.client.get(reverse('main-page-view', kwargs = {'page': 2}))
+        self.assertEqual(len(response.context['incidents'].object_list), 1)
+        for i in range(30):
+            _add_incident(self)
+        self.assertEqual(models.Incident.objects.count(), 51)
+        response = self.client.get(reverse('main-page-view', kwargs = {'page': 3}))
+        self.assertEqual(len(response.context['incidents'].object_list), 11)
+        response = self.client.get(reverse('main-page-view', kwargs = {'page': 10}))
+        self.assertEqual(len(response.context['incidents'].object_list), 11)
