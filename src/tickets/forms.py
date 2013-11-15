@@ -48,3 +48,6 @@ class CommentIncidentForm(ModelForm):
         labels = {
             'comment': u'Комментарий'
         }
+        widgets = {
+            'comment': forms.Textarea(attrs = {'class': 'span12'})
+        }

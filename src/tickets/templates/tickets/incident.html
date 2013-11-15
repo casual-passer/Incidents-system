@@ -1,34 +1,44 @@
 {% extends "tickets/base.html" %}
 
 {% block body %}
-    {% if form %}
-        <form action="." method="POST">{% csrf_token %}
-            <div class="control-group">
-                <table>
-                    <tr>
-                        <td class="span6">
-                            {{ form.status.label_tag }} {{ form.status }}
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <input type="submit" class="btn btn-primary span4" value="Изменить статус" name="change"/>
-        </form>
+
+    {% if incident %}
+        <span class="row-fluid">
+            {% if form %}
+                <form action="." method="POST">{% csrf_token %}
+                    <span class="span4">
+                        {{ form.status.label_tag }} {{ form.status }}
+                    </span>
+                    <input type="submit" class="btn btn-primary span2" value="Изменить статус" name="change"/>
+                </form>
+            {% endif %}
+            <span class="span12">
+                Отдел: {{ incident.department }}
+                Тематика: {{ incident.area }}
+                Пользователь {{ incident.user }}
+            </span>
+        </span>
     {% endif %}
 
-    {{ incident.theme }}
+
+    <table class="table table-bordered table-hover">
+        <tr>
+            <td class="span1">Тема:</td> 
+            <td>{{ incident.theme }}</td>
+        </tr>
+        <tr>
+            <td class="span1">Описание:</td>
+            <td>{{ incident.description|urlize|linebreaks }}</td>
+        </tr>
+    </table>
+
 
     {% if form_comment %}
         <form action="." method="POST">{% csrf_token %}
-            <div class="control-group">
-                <table>
-                    <tr>
-                        <td class="span6">
-                            {{ form_comment.comment }}
-                        </td>
-                    </tr>
-                </table>
+            <div class="text-center">
+                {{ form_comment.comment.label }}
             </div>
+            {{ form_comment.comment }}
             <input type="submit" class="btn btn-primary span4" value="Добавить комментарий" name="add_comment"/>
         </form>
     {% endif %}
@@ -38,7 +48,10 @@
         {% for comment in comments %}
             <tr>
                 <td class="span3">
-                    {{ comment.user.login }} <br> {{ comment.created_at|date:"d M Y H:i:s" }} <br>
+                    <span class="label">{{ comment.user }}</span> 
+                    <br> 
+                    {{ comment.created_at|date:"d M Y H:i:s" }}
+                    <br>
                 </td>
                 <td class="span12">
                     {{ comment.comment|urlize|linebreaks }}
