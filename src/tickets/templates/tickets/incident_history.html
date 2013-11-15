@@ -1,5 +1,20 @@
 {% extends "tickets/base.html" %}
 
 {% block body %}
-    Здесь будет история изменений статусов.
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+            <td>Дата</td>
+            <td>Статус</td>
+            <td>Пользователь</td>
+            </tr>
+        </thead>
+        {% for status in history %}
+            <tr>
+                <td class="span2">{{ status.modified_at|date:"d-m-Y G:i:s" }}</td>
+                <td class="span6">{{ status.status }}</td>
+                <td class="span2">{{ status.user }}</td>
+            </tr>
+        {% endfor %}
+    </table>
 {% endblock %}

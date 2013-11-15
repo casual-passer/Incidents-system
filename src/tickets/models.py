@@ -78,3 +78,6 @@ class IncidentHistory(models.Model):
     def __unicode__(self):
         return unicode(self.incident.pk) + ': ' + unicode(self.status.name)
 
+    class Meta:
+        ordering = ('-modified_at', )
+

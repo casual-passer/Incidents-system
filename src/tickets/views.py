@@ -114,7 +114,13 @@ def incident_add(request):
         return redirect(reverse('login-view'))
 
 def incident_history(request, incident_id = None):
+    try:
+        incident_id = int(incident_id)
+    except:
+        raise Http404
+    history = IncidentHistory.objects.filter(incident = incident_id)
     context = {}
+    context['history'] = history
     return render(request, 'tickets/incident_history.html', context)
 
 def incident(request, incident_id = None):
