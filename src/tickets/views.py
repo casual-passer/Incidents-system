@@ -147,6 +147,8 @@ def incident_history(request, incident_id = None):
 
 def incident(request, incident_id = None):
     if request.user.is_authenticated():
+        context = {}
+        context.update(csrf(request))
         try:
             incident_id = int(incident_id)
         except:
@@ -158,28 +160,24 @@ def incident(request, incident_id = None):
         incident = get_object_or_404(Incident, pk = incident_id)
         if request.user in group_admin.user_set.all():
             # Administrators can see everything
-            pass
+            context['form'] = ModifyIncidentForm(request.POST or None, status = incident.status)
+            if request.method == 'POST':
+                if context['form'].is_valid():
+                    data = context['form'].cleaned_data
+                    status = data['status']
+                    incident.status = status
+                    incident.save()
+                    IncidentHistory.objects.create(
+                        incident = incident,
+                        modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
+                        status = status,
+                        user = request.user
+                    )
+                    return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
         else:
             if incident.user != request.user:
                 raise PermissionDenied
-        context = {}
-        context.update(csrf(request))
-        context['form'] = ModifyIncidentForm(request.POST or None, status = incident.status)
-        if request.method == 'POST':
-            if context['form'].is_valid():
-                data = context['form'].cleaned_data
-                status = data['status']
-                incident.status = status
-                incident.save()
-                IncidentHistory.objects.create(
-                    incident = incident,
-                    modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
-                    status = status,
-                    user = request.user
-                )
-                return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
-        else: # not POST
-            context['incident'] = incident
+        context['incident'] = incident
         return render(request, 'tickets/incident.html', context)
     else:
         return redirect(reverse('login-view'))

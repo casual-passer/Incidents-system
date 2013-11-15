@@ -228,9 +228,9 @@ def _add_incident(self):
 class IncidentStatusTest(TestCase):
 
     def setUp(self):
-        User.objects.create_user('user', 'no@no.com', 'user')
+        self.user = User.objects.create_user('admin', 'no@no.com', 'admin')
         self.client = Client(enforce_csrf_checks = True)
-        self.client.login(username = 'user', password = 'user')
+        self.client.login(username = 'admin', password = 'admin')
         self.area = models.Area(name = u'IT')
         self.area.save()
         self.department = models.Department(name = u'Отдел IT')
@@ -242,6 +242,8 @@ class IncidentStatusTest(TestCase):
         ]
         for s in self.statuses:
             s.save()
+        group_admin = Group.objects.create(name = 'Administrators')
+        group_admin.user_set.add(self.user)
 
     def tearDown(self):
         self.client.logout()
@@ -266,6 +268,19 @@ class IncidentStatusTest(TestCase):
         response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
         self.assertEqual(response.context['form']['status'].field.initial, self.statuses[2])
         self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 3)
+
+    def test_user_can_not_change_status(self):
+        self.client.logout()
+        self.client = Client(enforce_csrf_checks = False)
+        User.objects.create_user('1', 'no@no.com', '1')
+        self.client.login(username = '1', password = '1')
+        _add_incident(self)
+        self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 1)
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'status': self.statuses[2].pk,
+        })
+        self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 1)
+        self.client.logout()
 
 class TestMainPagePagination(TestCase):
 

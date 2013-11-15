@@ -1,18 +1,20 @@
 {% extends "tickets/base.html" %}
 
 {% block body %}
-    <form action="." method="POST">{% csrf_token %}
-        <div class="control-group">
-            <table>
-                <tr>
-                    <td class="span6">
-                        {{ form.status.label_tag }} {{ form.status }}
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <input type="submit" class="btn btn-primary span4" value="Изменить статус" name="change"/>
-    </form>
+    {% if form %}
+        <form action="." method="POST">{% csrf_token %}
+            <div class="control-group">
+                <table>
+                    <tr>
+                        <td class="span6">
+                            {{ form.status.label_tag }} {{ form.status }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <input type="submit" class="btn btn-primary span4" value="Изменить статус" name="change"/>
+        </form>
+    {% endif %}
 
     {{ incident.theme }}
 {% endblock %}
