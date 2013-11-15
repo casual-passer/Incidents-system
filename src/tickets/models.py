@@ -81,3 +81,15 @@ class IncidentHistory(models.Model):
     class Meta:
         ordering = ('-modified_at', )
 
+
+class IncidentComment(models.Model):
+    incident = models.ForeignKey(Incident)
+    created_at = models.DateTimeField(auto_now = True)
+    user = models.ForeignKey(User)
+    comment = models.TextField(blank = False)
+
+    def __unicode(self):
+        return unicode(self.comment)
+
+    class Meta:
+        ordering = ('-created_at', )

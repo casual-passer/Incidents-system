@@ -256,14 +256,16 @@ class IncidentStatusTest(TestCase):
         csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'status': self.statuses[1].pk,
-            'csrfmiddlewaretoken': csrf_token
+            'csrfmiddlewaretoken': csrf_token,
+            'change': 1
         })
         response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
         csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
         self.assertEqual(response.context['form']['status'].field.initial, self.statuses[1])
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'status': self.statuses[2].pk,
-            'csrfmiddlewaretoken': csrf_token
+            'csrfmiddlewaretoken': csrf_token,
+            'change': 1
         })
         response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
         self.assertEqual(response.context['form']['status'].field.initial, self.statuses[2])
@@ -422,3 +424,43 @@ class IncidentDetailsTest(TestCase):
         self.assertEqual(response.status_code, 404)
         self.client.logout()
 
+
+class CommentTest(TestCase):
+
+    def setUp(self):
+        g1 = Group(name = 'Administrators')
+        g1.save()
+        self.user_admin = User.objects.create_user('admin', 'no@no.com', 'admin')
+        self.user_user = User.objects.create_user('user', 'no@no.com', 'user')
+        self.user_admin.save()
+        self.user_user.save()
+        g1.user_set.add(self.user_admin)
+        self.area = models.Area(name = u'IT')
+        self.area.save()
+        self.department = models.Department(name = u'Отдел IT')
+        self.department.save()
+        self.client = Client(enforce_csrf_checks = True)
+
+    def test_admin_can_comment(self):
+        self.client.login(username = 'user', password = 'user')
+        _add_incident(self)
+        self.assertEqual(models.IncidentComment.objects.filter(incident = 1).count(), 0)
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
+        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'comment': 'Comment from user.',
+            'csrfmiddlewaretoken': csrf_token,
+            'add_comment': 1
+        })
+        self.assertEqual(models.IncidentComment.objects.filter(incident = 1).count(), 0)
+        self.client.logout()
+        self.client.login(username = 'admin', password = 'admin')
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
+        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'comment': 'Comment from admin.',
+            'csrfmiddlewaretoken': csrf_token,
+            'add_comment': 1
+        })
+        self.assertEqual(models.IncidentComment.objects.filter(incident = 1).count(), 1)
+        self.client.logout()

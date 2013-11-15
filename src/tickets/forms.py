@@ -2,7 +2,7 @@
 from django.forms import ModelForm
 from django import forms
 
-from models import Incident
+from models import Incident, IncidentComment
 
 class AddIncidentForm(ModelForm):
 
@@ -37,4 +37,14 @@ class ModifyIncidentForm(ModelForm):
         fields = ['status']
         labels = {
             'status': u'Статус'
+        }
+
+
+class CommentIncidentForm(ModelForm):
+
+    class Meta:
+        model = IncidentComment
+        fields = ['comment']
+        labels = {
+            'comment': u'Комментарий'
         }

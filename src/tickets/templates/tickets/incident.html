@@ -17,4 +17,34 @@
     {% endif %}
 
     {{ incident.theme }}
+
+    {% if form_comment %}
+        <form action="." method="POST">{% csrf_token %}
+            <div class="control-group">
+                <table>
+                    <tr>
+                        <td class="span6">
+                            {{ form_comment.comment }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <input type="submit" class="btn btn-primary span4" value="Добавить комментарий" name="add_comment"/>
+        </form>
+    {% endif %}
+
+    {% if comments %}
+        <table class="table table-bordered table-hover">
+        {% for comment in comments %}
+            <tr>
+                <td class="span3">
+                    {{ comment.user.login }} <br> {{ comment.created_at|date:"d M Y H:i:s" }} <br>
+                </td>
+                <td class="span12">
+                    {{ comment.comment|urlize|linebreaks }}
+                </td>
+            </tr>
+        {% endfor %}
+        </table>
+    {% endif %}
 {% endblock %}

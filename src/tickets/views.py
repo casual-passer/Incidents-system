@@ -10,8 +10,8 @@ from django.core.exceptions import PermissionDenied
 import django.contrib.auth as auth
 from django.utils.timezone import utc
 
-from .models import Incident, IncidentHistory, Status, Area, Department
-from .forms import AddIncidentForm, ModifyIncidentForm
+from .models import Incident, IncidentHistory, Status, Area, Department, IncidentComment
+from .forms import AddIncidentForm, ModifyIncidentForm, CommentIncidentForm
 
 import datetime
 
@@ -149,32 +149,54 @@ def incident(request, incident_id = None):
     if request.user.is_authenticated():
         context = {}
         context.update(csrf(request))
+        context['errors'] = []
         try:
             incident_id = int(incident_id)
         except:
             raise Http404
         group_admin = _group_exists('Administrators')
         if not group_admin:
-            context['errors'] = [u'Группы пользователей не созданы.',]
+            context['errors'].append(u'Группы пользователей не созданы.')
             return render(request, 'tickets/base.html', context)
         incident = get_object_or_404(Incident, pk = incident_id)
         if request.user in group_admin.user_set.all():
             # Administrators can see everything
             context['form'] = ModifyIncidentForm(request.POST or None, status = incident.status)
+            context['form_comment'] = CommentIncidentForm(request.POST or None)
+            context['comments'] = IncidentComment.objects.filter(incident = incident)
             if request.method == 'POST':
-                if context['form'].is_valid():
-                    data = context['form'].cleaned_data
-                    status = data['status']
-                    incident.status = status
-                    incident.save()
-                    IncidentHistory.objects.create(
-                        incident = incident,
-                        modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
-                        status = status,
-                        user = request.user
-                    )
-                    return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
-        else:
+                if 'change' in context['form'].data:
+                    # change status
+                    if context['form'].is_valid():
+                        data = context['form'].cleaned_data
+                        status = data['status']
+                        incident.status = status
+                        incident.save()
+                        IncidentHistory.objects.create(
+                            incident = incident,
+                            modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
+                            status = status,
+                            user = request.user
+                        )
+                        return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
+                    else: # form is not valid
+                        context['errors'].append(u'Произошла ошибка при изменении статуса.')
+                        return render(request, 'tickets/incident.html', context)
+                if 'add_comment' in context['form_comment'].data:
+                    # add comment
+                    if context['form_comment'].is_valid():
+                        data = context['form_comment'].cleaned_data
+                        comment = data['comment']
+                        IncidentComment.objects.create(
+                            user = request.user,
+                            comment = comment,
+                            incident = incident
+                        )
+                        return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
+                    else:
+                        context['errors'].append(u'Произошла ошибка при создании комментария. Поле должно быть заполнено.')
+                        return render(request, 'tickets/incident.html', context)
+        else: # user is not in Administrators group
             if incident.user != request.user:
                 raise PermissionDenied
         context['incident'] = incident
