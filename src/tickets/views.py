@@ -6,6 +6,7 @@ from django.core.context_processors import csrf
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator
 from django.core.paginator import EmptyPage, PageNotAnInteger
+from django.core.exceptions import PermissionDenied
 import django.contrib.auth as auth
 from django.utils.timezone import utc
 
@@ -53,6 +54,13 @@ def logout(request):
     auth.logout(request)
     return redirect(reverse('login-view'))
 
+def _group_exists(group_name):
+    try:
+        group = auth.models.Group.objects.get(name = group_name)
+        return group
+    except auth.models.Group.DoesNotExist:
+        return False
+
 def main(request, page = 1):
     if request.user.is_authenticated():
         try:
@@ -60,10 +68,8 @@ def main(request, page = 1):
         except:
             raise Http404
         context = {}
-        try:
-            # Administrators can see all incidents
-            group_admin = auth.models.Group.objects.get(name = 'Administrators')
-        except auth.models.Group.DoesNotExist:
+        group_admin = _group_exists('Administrators')
+        if not group_admin:
             context['errors'] = [u'Группы пользователей не созданы.',]
             return render(request, 'tickets/base.html', context)
         if request.user in group_admin.user_set.all():
@@ -116,37 +122,64 @@ def incident_add(request):
         return redirect(reverse('login-view'))
 
 def incident_history(request, incident_id = None):
-    try:
-        incident_id = int(incident_id)
-    except:
-        raise Http404
-    history = IncidentHistory.objects.filter(incident = incident_id)
-    context = {}
-    context['history'] = history
-    return render(request, 'tickets/incident_history.html', context)
+    if request.user.is_authenticated():
+        try:
+            incident_id = int(incident_id)
+        except:
+            raise Http404
+        history = IncidentHistory.objects.filter(incident = incident_id)
+        if not history:
+            raise Http404
+        group_admin = _group_exists('Administrators')
+        if not group_admin:
+            context['errors'] = [u'Группы пользователей не созданы.',]
+            return render(request, 'tickets/base.html', context)
+        if request.user in group_admin.user_set.all():
+            pass
+        else:
+            if history[0].incident.user != request.user:
+                raise PermissionDenied
+        context = {}
+        context['history'] = history
+        return render(request, 'tickets/incident_history.html', context)
+    else:
+        return redirect(reverse('login-view'))
 
 def incident(request, incident_id = None):
-    try:
-        incident_id = int(incident_id)
-    except:
-        raise Http404
-    incident = get_object_or_404(Incident, pk = incident_id)
-    context = {}
-    context.update(csrf(request))
-    context['form'] = ModifyIncidentForm(request.POST or None, status = incident.status)
-    if request.method == 'POST':
-        if context['form'].is_valid():
-            data = context['form'].cleaned_data
-            status = data['status']
-            incident.status = status
-            incident.save()
-            IncidentHistory.objects.create(
-                incident = incident,
-                modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
-                status = status,
-                user = request.user
-            )
-            return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
-    else: # not POST
-        context['incident'] = incident
-    return render(request, 'tickets/incident.html', context)
+    if request.user.is_authenticated():
+        try:
+            incident_id = int(incident_id)
+        except:
+            raise Http404
+        group_admin = _group_exists('Administrators')
+        if not group_admin:
+            context['errors'] = [u'Группы пользователей не созданы.',]
+            return render(request, 'tickets/base.html', context)
+        incident = get_object_or_404(Incident, pk = incident_id)
+        if request.user in group_admin.user_set.all():
+            # Administrators can see everything
+            pass
+        else:
+            if incident.user != request.user:
+                raise PermissionDenied
+        context = {}
+        context.update(csrf(request))
+        context['form'] = ModifyIncidentForm(request.POST or None, status = incident.status)
+        if request.method == 'POST':
+            if context['form'].is_valid():
+                data = context['form'].cleaned_data
+                status = data['status']
+                incident.status = status
+                incident.save()
+                IncidentHistory.objects.create(
+                    incident = incident,
+                    modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
+                    status = status,
+                    user = request.user
+                )
+                return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
+        else: # not POST
+            context['incident'] = incident
+        return render(request, 'tickets/incident.html', context)
+    else:
+        return redirect(reverse('login-view'))

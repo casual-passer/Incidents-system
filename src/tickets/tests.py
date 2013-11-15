@@ -303,3 +303,107 @@ class TestMainPagePagination(TestCase):
         self.assertEqual(len(response.context['incidents'].object_list), 11)
         response = self.client.get(reverse('main-page-view', kwargs = {'page': 10}))
         self.assertEqual(len(response.context['incidents'].object_list), 11)
+
+class IncidentDetailsTest(TestCase):
+
+    def setUp(self):
+        self.area = models.Area(name = u'IT')
+        self.department = models.Department(name = u'Отдел IT')
+        self.status = models.Status(name = u'Открыт')
+        self.area.save()
+        self.department.save()
+        self.status.save()
+        group_admin = Group(name = 'Administrators')
+        group_user = Group(name = 'Users')
+        group_admin.save()
+        group_user.save()
+        self.user_admin = User.objects.create_user('admin', 'no@no.com', 'admin')
+        self.user_user = User.objects.create_user('user', 'no@no.com', 'user')
+        self.user_user1 = User.objects.create_user('user1', 'no@no.com', 'user1')
+        self.user_user2 = User.objects.create_user('user2', 'no@no.com', 'user2')
+        self.user_admin.save()
+        self.user_user.save()
+        self.user_user1.save()
+        self.user_user2.save()
+        group_admin.user_set.add(self.user_admin)
+        group_user.user_set.add(self.user_user)
+
+    def _user_create_incident(self, username, password):
+        self.client.login(username = username, password = password)
+        response = self.client.get(reverse('incident-add-view'))
+        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        response = self.client.post(reverse('incident-add-view'), {
+            'theme': 'Theme',
+            'description': 'Some text',
+            'fio': u'Иванов А.А.',
+            'room': '123',
+            'phone': '111',
+            'pc': '4567',
+            'department': self.department.pk,
+            'area': self.area.pk,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.client.logout()
+
+    def test_incident_auth(self):
+        self._user_create_incident('user', 'user')
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
+        self.assertRedirects(response, reverse('login-view'))
+
+    def test_admin_can_see_all_incidents(self):
+        self._user_create_incident('user', 'user')
+        self._user_create_incident('admin', 'admin')
+        self.client.login(username = 'user', password = 'user')
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 2}))
+        self.assertEqual(response.status_code, 403)
+        self.client.logout()
+
+    def test_users_can_see_only_their_incidents(self):
+        self._user_create_incident('user1', 'user1')
+        self._user_create_incident('user2', 'user2')
+        self.client.login(username = 'user1', password = 'user1')
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 2}))
+        self.assertEqual(response.status_code, 403)
+        self.client.logout()
+        self.client.login(username = 'user2', password = 'user2')
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(response.status_code, 403)
+        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 2}))
+        self.assertEqual(response.status_code, 200)
+        self.client.logout()
+
+    def test_incident_history_auth(self):
+        self._user_create_incident('user', 'user')
+        response = self.client.get(reverse('incident-history-view', kwargs = {'incident_id': 1}))
+        self.assertRedirects(response, reverse('login-view'))
+
+    def test_incident_history_access(self):
+        self._user_create_incident('user1', 'user1')
+        self._user_create_incident('user2', 'user2')
+        self.client.login(username = 'user1', password = 'user1')
+        response = self.client.get(reverse('incident-history-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse('incident-history-view', kwargs = {'incident_id': 2}))
+        self.assertEqual(response.status_code, 403)
+        self.client.logout()
+        self.client.login(username = 'user2', password = 'user2')
+        response = self.client.get(reverse('incident-history-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(response.status_code, 403)
+        response = self.client.get(reverse('incident-history-view', kwargs = {'incident_id': 2}))
+        self.assertEqual(response.status_code, 200)
+        self.client.logout()
+
+    def test_incident_history_does_not_exist(self):
+        self._user_create_incident('user', 'user')
+        self.client.login(username = 'user', password = 'user')
+        response = self.client.get(reverse('incident-history-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(response.status_code, 200)
+        models.IncidentHistory.objects.all().delete()
+        response = self.client.get(reverse('incident-history-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(response.status_code, 404)
+        self.client.logout()
+
