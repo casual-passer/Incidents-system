@@ -15,5 +15,5 @@ urlpatterns = patterns('tickets.views',
     url(r'^incident/(?P<incident_id>\d+)/$', 'incident', name = 'incident-view'),
     url(r'^incident/(?P<incident_id>\d+)/history/$', 'incident_history', name = 'incident-history-view'),
     url(r'^incident/add/$', 'incident_add', name = 'incident-add-view'),
-    #url(r'^incident/filter/$', 'incident_filter', name = 'incident-filter-view'),
+    url(r'^incident/filter/$', 'incident_filter', name = 'incident-filter-view'),
 )

@@ -1,0 +1,9 @@
+{% extends "tickets/base.html" %}
+
+{% block body %}
+    <form action="." method="POST">{% csrf_token %}
+    {{ form }}
+        <center><input type="submit" class="btn btn-primary span4" value="Фильтровать" name="filter"/></center>
+    </form>
+    {% include "tickets/incidents_list.html" %}
+{% endblock %}

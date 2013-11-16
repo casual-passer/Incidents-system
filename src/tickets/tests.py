@@ -464,3 +464,147 @@ class CommentTest(TestCase):
         })
         self.assertEqual(models.IncidentComment.objects.filter(incident = 1).count(), 1)
         self.client.logout()
+
+def _create_user(username, email, password):
+    return User.objects.create_user(username, email, password)
+
+def _create_group_with_users(group_name, users = []):
+    g = Group.objects.create(name = 'Administrators')
+    for u in users:
+        g.user_set.add(User.objects.get(username = u))
+
+def _get_csrf_token(self, url_name, kwargs = {}):
+    response = self.client.get(reverse(url_name, kwargs = kwargs))
+    return '%s' % response.context['csrf_token'].encode('utf-8')
+
+def _create_data(model, objects):
+    for o in objects:
+        model.objects.create(name = o)
+    return model.objects.all()
+
+def _add_incident(self, area):
+    response = self.client.get(reverse('incident-add-view'))
+    csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+    response = self.client.post(reverse('incident-add-view'), {
+        'theme': 'Тема',
+        'description': 'Описание',
+        'fio': u'ФИО',
+        'room': '123',
+        'phone': '123',
+        'pc': '1234',
+        'department': self.department.pk,
+        'area': area.pk,
+        'csrfmiddlewaretoken': csrf_token
+    })
+
+
+class FilterTest(TestCase):
+
+    def setUp(self):
+        self.user = _create_user('user', 'no@no.com', 'user')
+        self.admin =_create_user('admin', 'no@no.com', 'admin')
+        _create_group_with_users('Administrators', ['admin', ])
+        self.client = Client(enforce_csrf_checks = True)
+        self.statuses = _create_data(models.Status, [u'Открыт', u'В работе', u'Закрыт'])
+        self.areas = _create_data(models.Area, [u'Тематика ', u'Тематика 2', u'Тематика 3'])
+        self.department = models.Department.objects.create(name = u'Отдел')
+
+    def test_filter_auth(self):
+        response = self.client.get(reverse('incident-filter-view'))
+        self.assertRedirects(response, reverse('login-view'))
+        self.client.login(username = 'user', password = 'user')
+        response = self.client.get(reverse('incident-filter-view'))
+        self.assertEqual(response.status_code, 200)
+        self.client.logout()
+
+    def test_filter_admin_user_permissions(self):
+        self.client.login(username = 'admin', password = 'admin')
+        _add_incident(self, area = self.areas[0])
+        _add_incident(self, area = self.areas[1])
+        _add_incident(self, area = self.areas[2])
+        self.client.logout()
+        self.client.login(username = 'user', password = 'user')
+        _add_incident(self, area = self.areas[0])
+        _add_incident(self, area = self.areas[1])
+        _add_incident(self, area = self.areas[2])
+        csrf_token = _get_csrf_token(self, 'incident-filter-view')
+        response = self.client.post(reverse('incident-filter-view'), {
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 3)
+        self.client.logout()
+        self.client.login(username = 'admin', password = 'admin')
+        csrf_token = _get_csrf_token(self, 'incident-filter-view')
+        response = self.client.post(reverse('incident-filter-view'), {
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 6)
+        self.client.logout()
+
+    def test_filter(self):
+        self.client.login(username = 'admin', password = 'admin')
+        _add_incident(self, area = self.areas[0])
+        i = models.Incident.objects.get(pk = 1)
+        i.status = self.statuses[2]
+        i.save()
+        _add_incident(self, area = self.areas[1])
+        i = models.Incident.objects.get(pk = 2)
+        i.status = self.statuses[1]
+        i.save()
+        _add_incident(self, area = self.areas[2])
+        i = models.Incident.objects.get(pk = 3)
+        i.status = self.statuses[0]
+        i.save()
+        csrf_token = _get_csrf_token(self, 'incident-filter-view')
+        response = self.client.post(reverse('incident-filter-view'), {
+            'area': [1, 2, 3],
+            'status' : [1, 2, 3],
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 3)
+        response = self.client.post(reverse('incident-filter-view'), {
+            'area': [1, 2],
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 2)
+        response = self.client.post(reverse('incident-filter-view'), {
+            'status': [2, 3],
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 2)
+        response = self.client.post(reverse('incident-filter-view'), {
+            'area': [1],
+            'status': [1, 2],
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 0)
+        self.client.logout()
+        self.client.login(username = 'user', password = 'user')
+        _add_incident(self, area = self.areas[0])
+        i = models.Incident.objects.get(pk = 4)
+        i.status = self.statuses[0]
+        i.save()
+        _add_incident(self, area = self.areas[1])
+        i = models.Incident.objects.get(pk = 5)
+        i.status = self.statuses[1]
+        i.save()
+        csrf_token = _get_csrf_token(self, 'incident-filter-view')
+        response = self.client.post(reverse('incident-filter-view'), {
+            'area': [1],
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 1)
+        response = self.client.post(reverse('incident-filter-view'), {
+            'area': [3],
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 0)
+        self.client.logout()

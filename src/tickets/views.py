@@ -11,7 +11,7 @@ import django.contrib.auth as auth
 from django.utils.timezone import utc
 
 from .models import Incident, IncidentHistory, Status, Area, Department, IncidentComment
-from .forms import AddIncidentForm, ModifyIncidentForm, CommentIncidentForm
+from .forms import AddIncidentForm, ModifyIncidentForm, CommentIncidentForm, IncidentFilterForm
 
 import datetime
 
@@ -201,5 +201,36 @@ def incident(request, incident_id = None):
                 raise PermissionDenied
         context['incident'] = incident
         return render(request, 'tickets/incident.html', context)
+    else:
+        return redirect(reverse('login-view'))
+
+def incident_filter(request):
+    if request.user.is_authenticated():
+        context = {}
+        context.update(csrf(request))
+        context['errors'] = []
+        context['form'] = IncidentFilterForm(request.POST or None)
+        if request.method == 'POST':
+            if 'filter' in context['form'].data:
+                if context['form'].is_valid():
+                    data = context['form'].cleaned_data
+                    group_admin = _group_exists('Administrators')
+                    if not group_admin:
+                        context['errors'].append(u'Группы пользователей не созданы.')
+                        return render(request, 'tickets/base.html', context)
+                    if request.user in group_admin.user_set.all():
+                        incidents = Incident.objects.all()
+                    else:
+                        incidents = Incident.objects.filter(user = request.user)
+                    if 'status' in data and len(data['status']):
+                        incidents = incidents.filter(status__in = data['status'])
+                    if 'area' in data and len(data['area']):
+                        incidents = incidents.filter(area__in = data['area'])
+                    context['incidents'] = incidents
+                else:
+                    context['errors'].append(u'Произошла ошибка')
+        else: # not POST
+            pass
+        return render(request, 'tickets/incident_filter.html', context)
     else:
         return redirect(reverse('login-view'))

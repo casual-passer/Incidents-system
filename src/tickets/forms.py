@@ -2,7 +2,7 @@
 from django.forms import ModelForm
 from django import forms
 
-from models import Incident, IncidentComment
+from models import Incident, IncidentComment, Status, Area
 
 class AddIncidentForm(ModelForm):
 
@@ -51,3 +51,13 @@ class CommentIncidentForm(ModelForm):
         widgets = {
             'comment': forms.Textarea(attrs = {'class': 'span12'})
         }
+
+class IncidentFilterForm(forms.Form):
+
+   status = forms.MultipleChoiceField(widget = forms.CheckboxSelectMultiple, label = u'Статус', required = False)
+   area = forms.MultipleChoiceField(widget = forms.CheckboxSelectMultiple, label = u'Тематика', required = False)
+
+   def __init__(self, *args, **kwargs):
+       super(IncidentFilterForm, self).__init__(*args, **kwargs)
+       self.fields['status'].choices = [(x.pk, x.name) for x in Status.objects.all()]
+       self.fields['area'].choices = [(x.pk, x.name) for x in Area.objects.all()]
