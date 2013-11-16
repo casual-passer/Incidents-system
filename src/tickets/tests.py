@@ -8,16 +8,46 @@ from django.contrib.auth.models import Group
 import models
 
 
+def _generate_default_data(self):
+    self.area = models.Area.objects.create(name = u'Тематика')
+    self.department = models.Department.objects.create(name = u'Отдел')
+    self.status = models.Status.objects.create(name = u'Открыт')
+    self.user = User.objects.create_user('user', 'no@no.com', 'user')
+    self.admin = User.objects.create_user('admin', 'no@no.com', 'admin')
+    self.client = Client(enforce_csrf_checks = True)
+
+
+def _add_incident(self, area):
+    response = self.client.get(reverse('incident-add-view'))
+    csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+    response = self.client.post(reverse('incident-add-view'), {
+        'theme': 'Тема',
+        'description': 'Описание',
+        'fio': u'ФИО',
+        'room': '123',
+        'phone': '123',
+        'pc': '1234',
+        'department': self.department.pk,
+        'area': area.pk,
+        'csrfmiddlewaretoken': csrf_token
+    })
+
+
+def _get_csrf_token(self, url_name, kwargs = {}):
+    response = self.client.get(reverse(url_name, kwargs = kwargs))
+    return '%s' % response.context['csrf_token'].encode('utf-8')
+
+
+def _create_group_with_users(group_name, users = []):
+    g = Group.objects.create(name = 'Administrators')
+    for u in users:
+        g.user_set.add(User.objects.get(username = u))
+
+
 class ModelsTest(TestCase):
 
     def setUp(self):
-        self.area = models.Area(name = u'IT')
-        self.department = models.Department(name = u'Отдел IT')
-        self.status = models.Status(name = u'Открыт')
-        self.area.save()
-        self.department.save()
-        self.status.save()
-        self.user = User.objects.create_user('user', 'no@email.com', 'password')
+        _generate_default_data(self)
 
     def test_incident_save(self):
         incident = models.Incident(
@@ -59,27 +89,29 @@ class ModelsTest(TestCase):
         history = models.IncidentHistory.objects.get(incident = incident)
         self.assertEqual(incident.created_at, history.modified_at)
 
+
 class LoginTest(TestCase):
 
     def setUp(self):
-        self.client = Client(enforce_csrf_checks = True)
-        self.user = User.objects.create_user('user', 'no@email.com', 'password')
+        _generate_default_data(self)
 
     def test_login(self):
-        response = self.client.get(reverse('login-view'))
-        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        csrf_token = _get_csrf_token(self, 'login-view')
         response = self.client.post(reverse('login-view'), {
-            'username': 'user', 'password': 'password', 'csrfmiddlewaretoken': csrf_token
+            'username': 'user',
+            'password': 'user',
+            'csrfmiddlewaretoken': csrf_token
             })
         self.assertRedirects(response, reverse('main-view'))
         response = self.client.get(reverse('login-view'))
         self.assertRedirects(response, reverse('main-view'))
 
     def test_logout(self):
-        response = self.client.get(reverse('login-view'))
-        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        csrf_token = _get_csrf_token(self, 'login-view')
         response = self.client.post(reverse('login-view'), {
-            'username': 'user', 'password': 'password', 'csrfmiddlewaretoken': csrf_token
+            'username': 'user',
+            'password': 'user',
+            'csrfmiddlewaretoken': csrf_token
             })
         response = self.client.get(reverse('logout-view'))
         self.assertRedirects(response, reverse('login-view'))
@@ -87,21 +119,17 @@ class LoginTest(TestCase):
     def test_login_required(self):
         response = self.client.get(reverse('main-view'))
         self.assertRedirects(response, reverse('login-view'))
-        response = self.client.get(reverse('incident-add-view'))
-        self.assertRedirects(response, reverse('login-view'))
+
 
 class AddIncidentFormTest(TestCase):
 
     def setUp(self):
-        self.client = Client(enforce_csrf_checks = True)
-        self.user = User.objects.create_user('user', 'no@email.com', 'password')
-        self.client.login(username = 'user', password = 'password')
-        self.department = models.Department(name = 'dep')
-        self.department.save()
-        self.area = models.Area(name = 'area')
-        self.area.save()
-        response = self.client.get(reverse('incident-add-view'))
-        self.csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        _generate_default_data(self)
+        self.client.login(username = 'user', password = 'user')
+        self.csrf_token = _get_csrf_token(self, 'incident-add-view')
+
+    def tearDown(self):
+        self.client.logout()
 
     def test_filled_form(self):
         response = self.client.post(reverse('incident-add-view'), {
@@ -147,20 +175,8 @@ class AddIncidentFormTest(TestCase):
 class GroupsTest(TestCase):
 
     def setUp(self):
-        g1 = Group(name = 'Administrators')
-        g2 = Group(name = 'Users')
-        g1.save()
-        g2.save()
-        u1 = User.objects.create_user('admin', 'no@no.com', 'admin')
-        u2 = User.objects.create_user('user', 'no@no.com', 'user')
-        u1.save()
-        u2.save()
-        g1.user_set.add(u1)
-        g2.user_set.add(u2)
-        self.area = models.Area(name = u'IT')
-        self.area.save()
-        self.department = models.Department(name = u'Отдел IT')
-        self.department.save()
+        _generate_default_data(self)
+        _create_group_with_users('Administrators', ['admin',])
 
     def test_groups_permissions(self):
         group = Group.objects.get(name = 'Administrators')
@@ -198,6 +214,7 @@ class GroupsTest(TestCase):
         self.assertEqual(len(response.context['incidents']), 1)
         self.client.logout()
 
+
 class NoGroupsTest(TestCase):
 
     def setUp(self):
@@ -210,31 +227,9 @@ class NoGroupsTest(TestCase):
         self.client.logout()
 
 
-def _add_incident(self):
-    response = self.client.get(reverse('incident-add-view'))
-    csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
-    response = self.client.post(reverse('incident-add-view'), {
-        'theme': 'Theme',
-        'description': 'Some text',
-        'fio': u'Иванов А.А.',
-        'room': '123',
-        'phone': '111',
-        'pc': '4567',
-        'department': self.department.pk,
-        'area': self.area.pk,
-        'csrfmiddlewaretoken': csrf_token
-    })
-
 class IncidentStatusTest(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user('admin', 'no@no.com', 'admin')
-        self.client = Client(enforce_csrf_checks = True)
-        self.client.login(username = 'admin', password = 'admin')
-        self.area = models.Area(name = u'IT')
-        self.area.save()
-        self.department = models.Department(name = u'Отдел IT')
-        self.department.save()
         self.statuses = [
             models.Status(name = u'Открыт'),
             models.Status(name = u'В работе'),
@@ -242,25 +237,24 @@ class IncidentStatusTest(TestCase):
         ]
         for s in self.statuses:
             s.save()
-        group_admin = Group.objects.create(name = 'Administrators')
-        group_admin.user_set.add(self.user)
-
-    def tearDown(self):
-        self.client.logout()
+        _generate_default_data(self)
+        _create_group_with_users('Administrators', ['admin',])
 
     def test_status_change(self):
-        _add_incident(self)
+        self.client.login(username = 'admin', password = 'admin')
+        # admin adds incident
+        _add_incident(self, self.area)
         self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 1)
         response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
         self.assertEqual(response.context['form']['status'].field.initial, self.statuses[0])
-        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        csrf_token = _get_csrf_token(self, 'incident-view', kwargs = {'incident_id': 1})
+        # admin changes incident status
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'status': self.statuses[1].pk,
             'csrfmiddlewaretoken': csrf_token,
             'change': 1
         })
         response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
-        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
         self.assertEqual(response.context['form']['status'].field.initial, self.statuses[1])
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'status': self.statuses[2].pk,
@@ -270,13 +264,11 @@ class IncidentStatusTest(TestCase):
         response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
         self.assertEqual(response.context['form']['status'].field.initial, self.statuses[2])
         self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 3)
+        self.client.logout()
 
     def test_user_can_not_change_status(self):
-        self.client.logout()
-        self.client = Client(enforce_csrf_checks = False)
-        User.objects.create_user('1', 'no@no.com', '1')
-        self.client.login(username = '1', password = '1')
-        _add_incident(self)
+        self.client.login(username = 'user', password = 'user')
+        _add_incident(self, self.area)
         self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 1)
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'status': self.statuses[2].pk,
@@ -284,71 +276,54 @@ class IncidentStatusTest(TestCase):
         self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 1)
         self.client.logout()
 
+
 class TestMainPagePagination(TestCase):
 
     def setUp(self):
-        User.objects.create_user('user', 'no@no.com', 'user')
-        self.client = Client(enforce_csrf_checks = True)
+        _generate_default_data(self)
         self.client.login(username = 'user', password = 'user')
-        self.area = models.Area(name = u'IT')
-        self.area.save()
-        self.department = models.Department(name = u'Отдел IT')
-        self.department.save()
-        Group.objects.create(name = 'Administrators')
+        _create_group_with_users('Administrators')
+
+    def tearDown(self):
+        self.client.logout()
 
     def test_pagination(self):
         response = self.client.get(reverse('main-page-view', kwargs = {'page': 1}))
         self.assertEqual(len(response.context['incidents'].object_list), 0)
-        _add_incident(self)
+        _add_incident(self, self.area)
         response = self.client.get(reverse('main-page-view', kwargs = {'page': 1}))
         self.assertEqual(len(response.context['incidents'].object_list), 1)
         for i in range(19):
-            _add_incident(self)
+            _add_incident(self, self.area)
         self.assertEqual(models.Incident.objects.count(), 20)
         response = self.client.get(reverse('main-page-view', kwargs = {'page': 1}))
         self.assertEqual(len(response.context['incidents'].object_list), 20)
         response = self.client.get(reverse('main-page-view', kwargs = {'page': 2}))
-        # page is out of range
+        # page is out of range, so display last page
         self.assertEqual(len(response.context['incidents'].object_list), 20)
-        _add_incident(self)
+        _add_incident(self, self.area)
         response = self.client.get(reverse('main-page-view', kwargs = {'page': 2}))
         self.assertEqual(len(response.context['incidents'].object_list), 1)
         for i in range(30):
-            _add_incident(self)
+            _add_incident(self, self.area)
         self.assertEqual(models.Incident.objects.count(), 51)
         response = self.client.get(reverse('main-page-view', kwargs = {'page': 3}))
         self.assertEqual(len(response.context['incidents'].object_list), 11)
         response = self.client.get(reverse('main-page-view', kwargs = {'page': 10}))
         self.assertEqual(len(response.context['incidents'].object_list), 11)
 
+
 class IncidentDetailsTest(TestCase):
 
     def setUp(self):
-        self.area = models.Area(name = u'IT')
-        self.department = models.Department(name = u'Отдел IT')
-        self.status = models.Status(name = u'Открыт')
-        self.area.save()
-        self.department.save()
-        self.status.save()
-        group_admin = Group(name = 'Administrators')
-        group_user = Group(name = 'Users')
-        group_admin.save()
-        group_user.save()
-        self.user_admin = User.objects.create_user('admin', 'no@no.com', 'admin')
-        self.user_user = User.objects.create_user('user', 'no@no.com', 'user')
-        self.user_user1 = User.objects.create_user('user1', 'no@no.com', 'user1')
-        self.user_user2 = User.objects.create_user('user2', 'no@no.com', 'user2')
-        self.user_admin.save()
-        self.user_user.save()
-        self.user_user1.save()
-        self.user_user2.save()
-        group_admin.user_set.add(self.user_admin)
-        group_user.user_set.add(self.user_user)
+        _generate_default_data(self)
+        _create_group_with_users('Administrators', ['admin',])
+        self.user1 = User.objects.create_user('user1', 'no@no.com', 'user1')
+        self.user2 = User.objects.create_user('user2', 'no@no.com', 'user2')
 
     def _user_create_incident(self, username, password):
         self.client.login(username = username, password = password)
-        response = self.client.get(reverse('incident-add-view'))
-        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        csrf_token = _get_csrf_token(self, 'incident-add-view')
         response = self.client.post(reverse('incident-add-view'), {
             'theme': 'Theme',
             'description': 'Some text',
@@ -374,6 +349,7 @@ class IncidentDetailsTest(TestCase):
         response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
         self.assertEqual(response.status_code, 200)
         response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 2}))
+        # user can not see incident, created by admin
         self.assertEqual(response.status_code, 403)
         self.client.logout()
 
@@ -428,25 +404,14 @@ class IncidentDetailsTest(TestCase):
 class CommentTest(TestCase):
 
     def setUp(self):
-        g1 = Group(name = 'Administrators')
-        g1.save()
-        self.user_admin = User.objects.create_user('admin', 'no@no.com', 'admin')
-        self.user_user = User.objects.create_user('user', 'no@no.com', 'user')
-        self.user_admin.save()
-        self.user_user.save()
-        g1.user_set.add(self.user_admin)
-        self.area = models.Area(name = u'IT')
-        self.area.save()
-        self.department = models.Department(name = u'Отдел IT')
-        self.department.save()
-        self.client = Client(enforce_csrf_checks = True)
+        _generate_default_data(self)
+        _create_group_with_users('Administrators', ['admin',])
 
     def test_admin_can_comment(self):
         self.client.login(username = 'user', password = 'user')
-        _add_incident(self)
+        _add_incident(self, self.area)
         self.assertEqual(models.IncidentComment.objects.filter(incident = 1).count(), 0)
-        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
-        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        csrf_token = _get_csrf_token(self, 'incident-view', kwargs = {'incident_id': 1})
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'comment': 'Comment from user.',
             'csrfmiddlewaretoken': csrf_token,
@@ -455,8 +420,7 @@ class CommentTest(TestCase):
         self.assertEqual(models.IncidentComment.objects.filter(incident = 1).count(), 0)
         self.client.logout()
         self.client.login(username = 'admin', password = 'admin')
-        response = self.client.get(reverse('incident-view', kwargs = {'incident_id': 1}))
-        csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
+        csrf_token = _get_csrf_token(self, 'incident-view', kwargs = {'incident_id': 1})
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'comment': 'Comment from admin.',
             'csrfmiddlewaretoken': csrf_token,
@@ -465,49 +429,20 @@ class CommentTest(TestCase):
         self.assertEqual(models.IncidentComment.objects.filter(incident = 1).count(), 1)
         self.client.logout()
 
-def _create_user(username, email, password):
-    return User.objects.create_user(username, email, password)
-
-def _create_group_with_users(group_name, users = []):
-    g = Group.objects.create(name = 'Administrators')
-    for u in users:
-        g.user_set.add(User.objects.get(username = u))
-
-def _get_csrf_token(self, url_name, kwargs = {}):
-    response = self.client.get(reverse(url_name, kwargs = kwargs))
-    return '%s' % response.context['csrf_token'].encode('utf-8')
 
 def _create_data(model, objects):
     for o in objects:
         model.objects.create(name = o)
     return model.objects.all()
 
-def _add_incident(self, area):
-    response = self.client.get(reverse('incident-add-view'))
-    csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
-    response = self.client.post(reverse('incident-add-view'), {
-        'theme': 'Тема',
-        'description': 'Описание',
-        'fio': u'ФИО',
-        'room': '123',
-        'phone': '123',
-        'pc': '1234',
-        'department': self.department.pk,
-        'area': area.pk,
-        'csrfmiddlewaretoken': csrf_token
-    })
-
 
 class FilterTest(TestCase):
 
     def setUp(self):
-        self.user = _create_user('user', 'no@no.com', 'user')
-        self.admin =_create_user('admin', 'no@no.com', 'admin')
+        _generate_default_data(self)
         _create_group_with_users('Administrators', ['admin', ])
-        self.client = Client(enforce_csrf_checks = True)
         self.statuses = _create_data(models.Status, [u'Открыт', u'В работе', u'Закрыт'])
         self.areas = _create_data(models.Area, [u'Тематика ', u'Тематика 2', u'Тематика 3'])
-        self.department = models.Department.objects.create(name = u'Отдел')
 
     def test_filter_auth(self):
         response = self.client.get(reverse('incident-filter-view'))
