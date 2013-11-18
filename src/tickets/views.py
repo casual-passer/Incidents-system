@@ -114,9 +114,10 @@ def incident_add(request):
                     performers = performers,
                 )
                 incident.save()
+                return redirect(reverse('incident-view', kwargs = {'incident_id': incident.pk}))
             else: # form is not valid
                 context['errors'].append(u'Заполните все требуемые поля')
-            return render(request, 'tickets/incident_add.html', context)
+                return render(request, 'tickets/incident_add.html', context)
         else:
             context['form'] = AddIncidentForm()
         return render(request, 'tickets/incident_add.html', context)

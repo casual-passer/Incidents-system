@@ -145,7 +145,7 @@ class AddIncidentFormTest(TestCase):
             'performers': 'Name1, Name2',
             'csrfmiddlewaretoken': self.csrf_token
         })
-        self.assertEqual(response.context['errors'], [])
+        self.assertRedirects(response, reverse('incident-view', kwargs = {'incident_id': 1}))
 
     def test_partially_filled_form(self):
         response = self.client.post(reverse('incident-add-view'), {
@@ -160,7 +160,7 @@ class AddIncidentFormTest(TestCase):
             'performers': 'Name1, Name2',
             'csrfmiddlewaretoken': self.csrf_token
         })
-        self.assertEqual(response.context['errors'], [])
+        self.assertRedirects(response, reverse('incident-view', kwargs = {'incident_id': 1}))
 
     def test_incorrect_form(self):
         response = self.client.post(reverse('incident-add-view'), {
