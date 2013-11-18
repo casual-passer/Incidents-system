@@ -7,13 +7,15 @@
     </head>
     <body>
         <div class="container">
-            <div class="row-fluid">
-                <a href="{% url 'main-view' %}" class="btn btn-primary">Главная страница</a>
-                <a href="{% url 'incident-add-view' %}" class="btn btn-primary">Добавить</a>
-                <a href="{% url 'incident-filter-view' %}" class="btn btn-primary">Фильтр</a>
-                <a href="{% url 'logout-view' %}" class="btn btn-primary">Выйти</a>
-                <span class="pull-right">Вы: <span class="label">{{ user.username }}</span> </span>
-            </div>
+            {% if user.is_authenticated %}
+                <div class="row-fluid">
+                    <a href="{% url 'main-view' %}" class="btn btn-primary">Главная страница</a>
+                    <a href="{% url 'incident-add-view' %}" class="btn btn-primary">Добавить</a>
+                    <a href="{% url 'incident-filter-view' %}" class="btn btn-primary">Фильтр</a>
+                    <a href="{% url 'logout-view' %}" class="btn btn-primary">Выйти</a>
+                    <span class="pull-right">Вы: <span class="label">{{ user.username }}</span></span>
+                </div>
+            {% endif %}
 
             <span class="row"></span>
 
