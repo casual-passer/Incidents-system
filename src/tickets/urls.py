@@ -9,6 +9,7 @@ urlpatterns = patterns('tickets.views',
     url(r'^login/$', 'login', name = 'login-view'),
     url(r'^logout/$', 'logout', name = 'logout-view'),
 
+    url(r'^$', 'main'),
     url(r'^main/$', 'main', name = 'main-view'),
     url(r'^main/(?P<page>\d+)/$', 'main', name = 'main-page-view'),
 
