@@ -2,7 +2,27 @@
 
 {% block body %}
     <form action="." method="POST">{% csrf_token %}
-    {{ form }}
+        <table>
+            <tr>
+                <td class="span1">
+                    {{ form.area.label_tag }}
+                </td>
+                <td class="span3">
+                    {% for f in form.area %}
+                        {{ f }}
+                    {% endfor %}
+                </td>
+                <td class="span1">
+                    {{ form.status.label_tag }}
+                </td>
+                <td class="span3">
+                    {% for s in form.status %}
+                        {{ s }}
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+        <br />
         <center><input type="submit" class="btn btn-primary span4" value="Фильтровать" name="filter"/></center>
     </form>
     {% include "tickets/incidents_list.html" %}
