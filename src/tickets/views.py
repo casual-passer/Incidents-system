@@ -100,6 +100,7 @@ def incident_add(request):
                 room = data['room']
                 area = data['area']
                 department = data['department']
+                performers = data['performers']
                 incident = Incident(
                     theme = theme,
                     description = description,
@@ -109,7 +110,8 @@ def incident_add(request):
                     pc = pc,
                     room = room,
                     area = area,
-                    department = department
+                    department = department,
+                    performers = performers,
                 )
                 incident.save()
             else: # form is not valid

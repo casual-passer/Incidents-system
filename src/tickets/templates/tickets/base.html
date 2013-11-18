@@ -6,15 +6,17 @@
         <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}"/>
     </head>
     <body>
-    <div class="container">
-        <center>
-            {% for error in errors %}
-                <div class="alert alert-error">
-                    {{ error }}
-                </div>
-            {% endfor %}
-        </center>
-        {% block body %}{% endblock %}
-    </div>
+        <div class="container">
+            {% if errors %}
+                <center>
+                    {% for error in errors %}
+                        <div class="alert alert-error">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                </center>
+            {% endif %}
+            {% block body %}{% endblock %}
+        </div>
     </body>
 </html>

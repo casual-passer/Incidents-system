@@ -8,20 +8,28 @@ class AddIncidentForm(ModelForm):
 
     class Meta:
         model = Incident
-        fields = ['theme', 'description', 'fio', 'phone', 'pc', 'room', 'area', 'department']
+        fields = ['theme', 'description', 'fio', 'phone', 'pc', 'room', 'area', 'department', 'performers']
         labels = {
-            'theme': u'Тема',
-            'description': u'Описание',
-            'fio': u'ФИО',
-            'phone': u'Номер телефона',
-            'pc': u'Номер компьютера',
+            'theme': u'Тема*',
+            'description': u'Описание*',
+            'fio': u'ФИО*',
+            'phone': u'Номер телефона*',
+            'pc': u'Номер компьютера*',
             'room': u'Номер комнаты',
-            'area': u'Тематика',
-            'department': u'Отдел'
+            'area': u'Тематика*',
+            'department': u'Отдел*',
+            'performers': u'Исполнители',
         }
         widgets = {
+            'fio': forms.TextInput(attrs = {'class': 'input-block-level'}),
+            'phone': forms.TextInput(attrs = {'class': 'input-block-level'}),
+            'pc': forms.TextInput(attrs = {'class': 'input-block-level'}),
+            'room': forms.TextInput(attrs = {'class': 'input-block-level'}),
+            'area': forms.Select(attrs = {'class': 'span6'}),
+            'department': forms.Select(attrs = {'class': 'span6'}),
             'theme': forms.TextInput(attrs = {'class': 'span12'}),
-            'description': forms.Textarea(attrs = {'class': 'span12'})
+            'description': forms.Textarea(attrs = {'class': 'span12'}),
+            'performers': forms.TextInput(attrs = {'class': 'span12'}),
         }
 
 class ModifyIncidentForm(ModelForm):

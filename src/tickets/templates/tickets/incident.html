@@ -3,34 +3,53 @@
 {% block body %}
 
     {% if incident %}
-        <span class="row-fluid">
-            {% if form %}
+        {% if form %}
+            <div class="control-group">
                 <form action="." method="POST">{% csrf_token %}
-                    <span class="span4">
-                        {{ form.status.label_tag }} {{ form.status }}
-                    </span>
-                    <input type="submit" class="btn btn-primary span2" value="Изменить статус" name="change"/>
+                    <table class="table table-condensed">
+                        <tr>
+                            <td class="span1">
+                                Статус
+                            </td>
+                            <td class="span2">
+                                {{ form.status }}
+                            </td>
+                            <td class="span8">
+                                <input type="submit" class="btn btn-primary" value="Изменить статус" name="change"/>
+                            </td>
+                        </tr>
+                    </table>
                 </form>
-            {% endif %}
-            <span class="span12">
-                Отдел: {{ incident.department }}
-                Тематика: {{ incident.area }}
-                Пользователь {{ incident.user }}
-            </span>
-        </span>
+            </div>
+        {% endif %}
+
+        <table class="table table-bordered table-hover">
+            <tr>
+                <td class="span1">Отдел:</td>
+                <td>{{ incident.department }}</td>
+            </tr>
+            <tr>
+                <td class="span1">Тематика:</td>
+                <td>{{ incident.area }}</td>
+            </tr>
+            <tr>
+                <td class="span1">Пользователь:</td>
+                <td>{{ incident.user }}</td>
+            </tr>
+            <tr>
+                <td class="span1">Исполнители:</td>
+                <td>{{ incident.performers }}</td>
+            </tr>
+            <tr>
+                <td class="span1">Тема:</td>
+                <td>{{ incident.theme }}</td>
+            </tr>
+            <tr>
+                <td class="span1">Описание:</td>
+                <td>{{ incident.description|urlize|linebreaks }}</td>
+            </tr>
+        </table>
     {% endif %}
-
-
-    <table class="table table-bordered table-hover">
-        <tr>
-            <td class="span1">Тема:</td> 
-            <td>{{ incident.theme }}</td>
-        </tr>
-        <tr>
-            <td class="span1">Описание:</td>
-            <td>{{ incident.description|urlize|linebreaks }}</td>
-        </tr>
-    </table>
 
 
     {% if form_comment %}

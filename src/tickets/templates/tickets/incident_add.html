@@ -3,7 +3,7 @@
 {% block body %}
     <form action="." method="POST">{% csrf_token %}
         <div class="control-group">
-            <table>
+            <table class="table table-condensed">
                 <tr>
                     <td class="span6">
                         {{ form.area.label_tag }} {{ form.area }}
@@ -20,8 +20,6 @@
                         {{ form.phone.label_tag }} {{ form.phone }}
                     </td>
                 </tr>
-            </table>
-            <table>
                 <tr>
                     <td class="span6">
                         {{ form.pc.label_tag }} {{ form.pc }}
@@ -34,6 +32,11 @@
         </div>
         <div class="control-group">
             <table>
+                <tr>
+                    <td>
+                        {{ form.performers.label_tag }} {{ form.performers }}
+                    </td>
+                </tr>
                 <tr>
                     <td>
                         {{ form.theme.label_tag }} {{ form.theme }}

@@ -50,6 +50,8 @@ class Incident(AbstractModel):
     area = models.ForeignKey(Area)
     department = models.ForeignKey(Department)
 
+    performers = models.CharField(max_length = 256)
+
     def save(self, *args, **kwargs):
         in_db = True
         if not self.id:

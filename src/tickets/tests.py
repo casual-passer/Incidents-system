@@ -29,6 +29,7 @@ def _add_incident(self, area):
         'pc': '1234',
         'department': self.department.pk,
         'area': area.pk,
+        'performers': 'Performer1, Performer2',
         'csrfmiddlewaretoken': csrf_token
     })
 
@@ -141,6 +142,7 @@ class AddIncidentFormTest(TestCase):
             'pc': '4567',
             'department': self.department.pk,
             'area': self.area.pk,
+            'performers': 'Name1, Name2',
             'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertEqual(response.context['errors'], [])
@@ -155,6 +157,7 @@ class AddIncidentFormTest(TestCase):
             'pc': '4567',
             'department': 1,
             'area': 1,
+            'performers': 'Name1, Name2',
             'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertEqual(response.context['errors'], [])
@@ -333,6 +336,7 @@ class IncidentDetailsTest(TestCase):
             'pc': '4567',
             'department': self.department.pk,
             'area': self.area.pk,
+            'performers': 'Name1, Name2',
             'csrfmiddlewaretoken': csrf_token
         })
         self.client.logout()
