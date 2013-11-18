@@ -11,7 +11,8 @@ import django.contrib.auth as auth
 from django.utils.timezone import utc
 
 from .models import Incident, IncidentHistory, Status, Area, Department, IncidentComment
-from .forms import AddIncidentForm, ModifyIncidentForm, CommentIncidentForm, IncidentFilterForm
+from .forms import AddIncidentForm, ModifyIncidentForm, CommentIncidentForm, IncidentFilterForm, IncidentPerformersForm
+from .utils import send_email
 
 import datetime
 
@@ -100,7 +101,6 @@ def incident_add(request):
                 room = data['room']
                 area = data['area']
                 department = data['department']
-                performers = data['performers']
                 incident = Incident(
                     theme = theme,
                     description = description,
@@ -111,7 +111,6 @@ def incident_add(request):
                     room = room,
                     area = area,
                     department = department,
-                    performers = performers,
                 )
                 incident.save()
                 return redirect(reverse('incident-view', kwargs = {'incident_id': incident.pk}))
@@ -162,13 +161,25 @@ def incident(request, incident_id = None):
             context['errors'].append(u'Группы пользователей не созданы.')
             return render(request, 'tickets/base.html', context)
         incident = get_object_or_404(Incident, pk = incident_id)
+        context['incident'] = incident
         if request.user in group_admin.user_set.all():
             # Administrators can see everything
-            context['form'] = ModifyIncidentForm(request.POST or None, status = incident.status)
-            context['form_comment'] = CommentIncidentForm(request.POST or None)
+            if 'change' in request.POST:
+                context['form'] = ModifyIncidentForm(request.POST or None, status = incident.status)
+            else:
+                context['form'] = ModifyIncidentForm(status = incident.status)
+            if 'add_comment' in request.POST:
+                context['form_comment'] = CommentIncidentForm(request.POST or None)
+            else:
+                context['form_comment'] = CommentIncidentForm()
+            if request.user.is_superuser:
+                if 'add_performers' in request.POST:
+                    context['form_performers'] = IncidentPerformersForm(request.POST or None, instance = incident)
+                else:
+                    context['form_performers'] = IncidentPerformersForm(instance = incident)
             context['comments'] = IncidentComment.objects.filter(incident = incident)
             if request.method == 'POST':
-                if 'change' in context['form'].data:
+                if 'change' in request.POST:
                     # change status
                     if context['form'].is_valid():
                         data = context['form'].cleaned_data
@@ -185,7 +196,7 @@ def incident(request, incident_id = None):
                     else: # form is not valid
                         context['errors'].append(u'Произошла ошибка при изменении статуса.')
                         return render(request, 'tickets/incident.html', context)
-                if 'add_comment' in context['form_comment'].data:
+                if 'add_comment' in request.POST:
                     # add comment
                     if context['form_comment'].is_valid():
                         data = context['form_comment'].cleaned_data
@@ -199,10 +210,45 @@ def incident(request, incident_id = None):
                     else:
                         context['errors'].append(u'Произошла ошибка при создании комментария. Поле должно быть заполнено.')
                         return render(request, 'tickets/incident.html', context)
+                # only superuser can change this
+                if request.user.is_superuser and 'add_performers' in request.POST:
+                    if context['form_performers'].is_valid():
+                        data = context['form_performers'].cleaned_data
+                        performers = set(data['performers'])
+                        # reassign performers
+                        # first remove all which exists
+                        incident.performers.clear()
+                        # and add new
+                        path = full_path = ('http',
+                            ('', 's')[request.is_secure()],
+                            '://',
+                            request.META['HTTP_HOST'],
+                            request.path)
+                        path = ''.join(path)
+                        context['email_messages'] = []
+                        context['email_messages_errors'] = []
+                        for p in performers:
+                            incident.performers.add(p)
+                            if p.email:
+                                try:
+                                    send_email(
+                                        subject = u'Новая запись',
+                                        body = u'Тема: %s.\n%s' % (incident.theme, path),
+                                        msg_to = p.email,
+                                        msg_from = u'iamchanger@gmail.com')
+                                    context['email_messages'].append(u'Отправлен e-mail для %s на %s' % (p.name, p.email))
+                                except:
+                                    context['email_messages_errors'].append(u'Ошибка отправки e-mail для %s на %s' % (p.name, p.email))
+                        incident.save()
+                        if len(context['email_messages']) or len(context['email_messages_errors']):
+                            return render(request, 'tickets/incident.html', context)
+                        return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
+                    else:
+                        context['errors'].append(u'Заполните форму исполнителей')
+                        return render(request, 'tickets/incident.html', context)
         else: # user is not in Administrators group
             if incident.user != request.user:
                 raise PermissionDenied
-        context['incident'] = incident
         return render(request, 'tickets/incident.html', context)
     else:
         return redirect(reverse('login-view'))

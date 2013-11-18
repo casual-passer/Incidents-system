@@ -40,10 +40,41 @@
                 <td class="span1">Пользователь:</td>
                 <td>{{ incident.user }}</td>
             </tr>
-            <tr>
-                <td class="span1">Исполнители:</td>
-                <td>{{ incident.performers }}</td>
-            </tr>
+            {% if form_performers %}
+                <tr>
+                    <td class="span1">Исполнители:</td>
+                    <td>
+                        <form action="." method="POST">{% csrf_token %}
+                                {% for p in form_performers.performers %}
+                                    {{ p }}
+                                {% endfor %}
+                                <input type="submit" class="btn btn-primary" value="Изменить список исполнителей" name="add_performers"/>
+                        </form>
+                    </td>
+                </tr>
+                {% if email_messages_errors %}
+                    {% for m in email_messages_errors %}
+                    <tr>
+                        <td colspan="2" class="span12 alert alert-error">
+                            <span>
+                                {{ m }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+                {% if email_messages %}
+                    {% for m in email_messages %}
+                    <tr>
+                        <td colspan="2" class="span12 alert alert-success">
+                            <span>
+                                {{ m }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+            {% endif %}
             <tr>
                 <td class="span1">Тема:</td>
                 <td>{{ incident.theme }}</td>

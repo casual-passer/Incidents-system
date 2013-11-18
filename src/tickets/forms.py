@@ -2,13 +2,13 @@
 from django.forms import ModelForm
 from django import forms
 
-from models import Incident, IncidentComment, Status, Area
+from models import Incident, IncidentComment, Status, Area, Performer
 
 class AddIncidentForm(ModelForm):
 
     class Meta:
         model = Incident
-        fields = ['theme', 'description', 'fio', 'phone', 'pc', 'room', 'area', 'department', 'performers']
+        fields = ['theme', 'description', 'fio', 'phone', 'pc', 'room', 'area', 'department']
         labels = {
             'theme': u'Тема*',
             'description': u'Описание*',
@@ -18,7 +18,6 @@ class AddIncidentForm(ModelForm):
             'room': u'Номер комнаты',
             'area': u'Тематика*',
             'department': u'Отдел*',
-            'performers': u'Исполнители',
         }
         widgets = {
             'fio': forms.TextInput(attrs = {'class': 'input-block-level'}),
@@ -29,7 +28,6 @@ class AddIncidentForm(ModelForm):
             'department': forms.Select(attrs = {'class': 'span6'}),
             'theme': forms.TextInput(attrs = {'class': 'span12'}),
             'description': forms.Textarea(attrs = {'class': 'span12'}),
-            'performers': forms.TextInput(attrs = {'class': 'span12'}),
         }
 
 class ModifyIncidentForm(ModelForm):
@@ -69,3 +67,22 @@ class IncidentFilterForm(forms.Form):
        super(IncidentFilterForm, self).__init__(*args, **kwargs)
        self.fields['status'].choices = [(x.pk, x.name) for x in Status.objects.all()]
        self.fields['area'].choices = [(x.pk, x.name) for x in Area.objects.all()]
+
+
+class IncidentPerformersForm(ModelForm):
+
+
+    def __init__(self, *args, **kwargs):
+        super(IncidentPerformersForm, self).__init__(*args, **kwargs)
+        self.fields['performers'] = forms.ModelMultipleChoiceField(
+            queryset = Performer.objects.all(),
+            initial = self.instance.performers.all(),
+            widget = forms.CheckboxSelectMultiple()
+            )
+
+    class Meta:
+        model = Incident
+        fields = ['performers']
+        labels = {
+            'performers': u'Исполнители'
+        }

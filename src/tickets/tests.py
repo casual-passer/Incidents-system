@@ -29,7 +29,6 @@ def _add_incident(self, area):
         'pc': '1234',
         'department': self.department.pk,
         'area': area.pk,
-        'performers': 'Performer1, Performer2',
         'csrfmiddlewaretoken': csrf_token
     })
 
@@ -142,7 +141,6 @@ class AddIncidentFormTest(TestCase):
             'pc': '4567',
             'department': self.department.pk,
             'area': self.area.pk,
-            'performers': 'Name1, Name2',
             'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertRedirects(response, reverse('incident-view', kwargs = {'incident_id': 1}))
@@ -157,7 +155,6 @@ class AddIncidentFormTest(TestCase):
             'pc': '4567',
             'department': 1,
             'area': 1,
-            'performers': 'Name1, Name2',
             'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertRedirects(response, reverse('incident-view', kwargs = {'incident_id': 1}))
@@ -336,7 +333,6 @@ class IncidentDetailsTest(TestCase):
             'pc': '4567',
             'department': self.department.pk,
             'area': self.area.pk,
-            'performers': 'Name1, Name2',
             'csrfmiddlewaretoken': csrf_token
         })
         self.client.logout()
@@ -547,3 +543,57 @@ class FilterTest(TestCase):
         })
         self.assertEqual(len(response.context['incidents']), 0)
         self.client.logout()
+
+class PerformerTest(TestCase):
+
+    def setUp(self):
+        _generate_default_data(self)
+        User.objects.create_superuser('superadmin','no@no.com', 'superadmin')
+        _create_group_with_users('Administrators', ['superadmin',])
+        models.Performer.objects.create(name = 'perf1', email = '1@1.com')
+        models.Performer.objects.create(name = 'perf2', email = '2@2.com')
+        models.Performer.objects.create(name = 'perf3', email = '3@3.com')
+
+    def test_assign_performers(self):
+        self.client.login(username = 'superadmin', password = 'superadmin')
+        _add_incident(self, self.area)
+        self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 0)
+        csrf_token = _get_csrf_token(self, 'incident-view', kwargs = {'incident_id': 1})
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'performers': ('1', ),
+            'add_performers': '1',
+            'csrfmiddlewaretoken': csrf_token
+            })
+        self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 1)
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'performers': ('1', '2',),
+            'add_performers': '1',
+            'csrfmiddlewaretoken': csrf_token
+            })
+        self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 2)
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'performers': ('3', ),
+            'add_performers': '1',
+            'csrfmiddlewaretoken': csrf_token
+            })
+        self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 1)
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'add_performers': '1',
+            'csrfmiddlewaretoken': csrf_token
+            })
+        self.assertEqual(len(response.context['errors']), 1)
+        self.client.logout()
+
+    def test_nonsuperuser_assign_performers(self):
+        self.client.login(username = 'admin', password = 'admin')
+        _add_incident(self, self.area)
+        self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 0)
+        csrf_token = _get_csrf_token(self, 'incident-view', kwargs = {'incident_id': 1})
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'performers': ('1', ),
+            'add_performers': '1',
+            'csrfmiddlewaretoken': csrf_token
+            })
+        self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 0)
+        self.client.logout()
+

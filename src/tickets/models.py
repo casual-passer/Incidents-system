@@ -34,6 +34,12 @@ class Department(AbstractModel):
     name = models.CharField(max_length = 128)
 
 
+class Performer(AbstractModel):
+
+    name = models.CharField(max_length = 128)
+    email = models.CharField(max_length = 128)
+
+
 class Incident(AbstractModel):
 
     theme = models.CharField(max_length = 128, blank = False)
@@ -50,7 +56,7 @@ class Incident(AbstractModel):
     area = models.ForeignKey(Area)
     department = models.ForeignKey(Department)
 
-    performers = models.CharField(max_length = 256)
+    performers = models.ManyToManyField(Performer)
 
     def save(self, *args, **kwargs):
         in_db = True
