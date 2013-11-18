@@ -25,6 +25,10 @@
 
         <table class="table table-bordered table-hover">
             <tr>
+                <td class="span1">Статус:</td>
+                <td>{{ incident.status }}</td>
+            </tr>
+            <tr>
                 <td class="span1">Отдел:</td>
                 <td>{{ incident.department }}</td>
             </tr>
@@ -58,7 +62,7 @@
                 {{ form_comment.comment.label }}
             </div>
             {{ form_comment.comment }}
-            <input type="submit" class="btn btn-primary span4" value="Добавить комментарий" name="add_comment"/>
+            <center><input type="submit" class="btn btn-primary span4" value="Добавить комментарий" name="add_comment"/></center>
         </form>
     {% endif %}
 
