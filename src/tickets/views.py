@@ -9,6 +9,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.core.exceptions import PermissionDenied
 import django.contrib.auth as auth
 from django.utils.timezone import utc
+from django.conf import settings
 
 from .models import Incident, IncidentHistory, Status, Area, Department, IncidentComment
 from .forms import AddIncidentForm, ModifyIncidentForm, CommentIncidentForm, IncidentFilterForm, IncidentPerformersForm
@@ -222,7 +223,7 @@ def incident(request, incident_id = None):
                         path = full_path = ('http',
                             ('', 's')[request.is_secure()],
                             '://',
-                            request.META['HTTP_HOST'],
+                            request.META.get('HTTP_HOST', 'unknown'),
                             request.path)
                         path = ''.join(path)
                         context['email_messages'] = []
@@ -235,7 +236,7 @@ def incident(request, incident_id = None):
                                         subject = u'Новая запись',
                                         body = u'Тема: %s.\n%s' % (incident.theme, path),
                                         msg_to = p.email,
-                                        msg_from = u'iamchanger@gmail.com')
+                                        msg_from = settings.EMAIL_FROM)
                                     context['email_messages'].append(u'Отправлен e-mail для %s на %s' % (p.name, p.email))
                                 except:
                                     context['email_messages_errors'].append(u'Ошибка отправки e-mail для %s на %s' % (p.name, p.email))
