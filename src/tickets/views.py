@@ -89,7 +89,7 @@ def incident_add(request):
         context = {}
         context['errors'] = []
         context.update(csrf(request))
-        if request.method == 'POST':
+        if request.method == 'POST' and 'save' in request.POST:
             context['form'] = AddIncidentForm(request.POST)
             if context['form'].is_valid():
                 incident = context['form'].save(commit = False)

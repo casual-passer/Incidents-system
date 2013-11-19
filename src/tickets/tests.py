@@ -29,6 +29,7 @@ def _add_incident(self, area):
         'pc': '1234',
         'department': self.department.pk,
         'area': area.pk,
+        'save': '1',
         'csrfmiddlewaretoken': csrf_token
     })
 
@@ -132,6 +133,7 @@ class AddIncidentFormTest(TestCase):
         self.client.logout()
 
     def test_filled_form(self):
+        self.assertEqual(len(models.Incident.objects.all()), 0)
         response = self.client.post(reverse('incident-add-view'), {
             'theme': 'Theme',
             'description': 'Some text',
@@ -141,11 +143,14 @@ class AddIncidentFormTest(TestCase):
             'pc': '4567',
             'department': self.department.pk,
             'area': self.area.pk,
+            'save': '1',
             'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertRedirects(response, reverse('incident-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(len(models.Incident.objects.all()), 1)
 
     def test_partially_filled_form(self):
+        self.assertEqual(len(models.Incident.objects.all()), 0)
         response = self.client.post(reverse('incident-add-view'), {
             'theme': 'Theme',
             'description': 'Some text',
@@ -155,11 +160,14 @@ class AddIncidentFormTest(TestCase):
             'pc': '4567',
             'department': 1,
             'area': 1,
+            'save': 1,
             'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertRedirects(response, reverse('incident-view', kwargs = {'incident_id': 1}))
+        self.assertEqual(len(models.Incident.objects.all()), 1)
 
     def test_incorrect_form(self):
+        self.assertEqual(len(models.Incident.objects.all()), 0)
         response = self.client.post(reverse('incident-add-view'), {
             'theme': 'Theme',
             'description': 'Some text',
@@ -167,9 +175,11 @@ class AddIncidentFormTest(TestCase):
             'pc': '4567',
             'department': 1,
             'area': 1,
+            'save': 1,
             'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertEqual(len(response.context['errors']), 1)
+        self.assertEqual(len(models.Incident.objects.all()), 0)
 
 
 class GroupsTest(TestCase):
@@ -333,6 +343,7 @@ class IncidentDetailsTest(TestCase):
             'pc': '4567',
             'department': self.department.pk,
             'area': self.area.pk,
+            'save': '1',
             'csrfmiddlewaretoken': csrf_token
         })
         self.client.logout()
