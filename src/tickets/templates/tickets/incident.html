@@ -26,7 +26,9 @@
         <table class="table table-bordered table-hover">
             <tr>
                 <td class="span1">Статус:</td>
-                <td>{{ incident.status }}</td>
+                <td>
+                    <a href="{% url 'incident-history-view' incident.pk %}">{{ incident.status }}</a>
+                </td>
             </tr>
             <tr>
                 <td class="span1">Отдел:</td>
