@@ -280,10 +280,41 @@ class IncidentStatusTest(TestCase):
         self.client.login(username = 'user', password = 'user')
         _add_incident(self, self.area)
         self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 1)
+        csrf_token = _get_csrf_token(self, 'incident-view', kwargs = {'incident_id': 1})
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'status': self.statuses[2].pk,
+            'csrfmiddlewaretoken': csrf_token,
+            'change': 1
         })
         self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 1)
+        self.client.logout()
+
+    def test_status_not_changed(self):
+        self.client.login(username = 'admin', password = 'admin')
+        _add_incident(self, self.area)
+        self.assertEqual(models.Incident.objects.get(pk = 1).status, self.statuses[0])
+        csrf_token = _get_csrf_token(self, 'incident-view', kwargs = {'incident_id': 1})
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'status': self.statuses[2].pk,
+            'csrfmiddlewaretoken': csrf_token,
+            'change': 1
+        })
+        self.assertEqual(models.Incident.objects.get(pk = 1).status, self.statuses[2])
+        self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 2)
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'status': self.statuses[2].pk,
+            'csrfmiddlewaretoken': csrf_token,
+            'change': 1
+        })
+        self.assertEqual(models.Incident.objects.get(pk = 1).status, self.statuses[2])
+        self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 2)
+        response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
+            'status': self.statuses[1].pk,
+            'csrfmiddlewaretoken': csrf_token,
+            'change': 1
+        })
+        self.assertEqual(models.Incident.objects.get(pk = 1).status, self.statuses[1])
+        self.assertEqual(models.IncidentHistory.objects.filter(incident = 1).count(), 3)
         self.client.logout()
 
 

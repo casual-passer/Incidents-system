@@ -164,14 +164,16 @@ def incident(request, incident_id = None):
                 if 'change' in request.POST:
                     # change status
                     if context['form'].is_valid():
-                        incident.status = context['form'].cleaned_data['status']
-                        incident.save()
-                        IncidentHistory.objects.create(
-                            incident = incident,
-                            modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
-                            status = incident.status,
-                            user = request.user
-                        )
+                        new_status = context['form'].cleaned_data['status']
+                        if incident.status != new_status:
+                            incident.status = new_status
+                            incident.save()
+                            IncidentHistory.objects.create(
+                                incident = incident,
+                                modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
+                                status = incident.status,
+                                user = request.user
+                            )
                         return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
                     else: # form is not valid
                         context['errors'].append(u'Произошла ошибка при изменении статуса.')
