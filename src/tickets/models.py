@@ -44,7 +44,7 @@ class Incident(AbstractModel):
 
     theme = models.CharField(max_length = 128, blank = False)
     description = models.TextField(blank = False)
-    created_at = models.DateTimeField(auto_now = True)
+    created_at = models.DateTimeField(auto_now_add = True)
 
     user = models.ForeignKey(User)
     fio = models.CharField(max_length = 128)
