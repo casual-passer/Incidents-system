@@ -92,27 +92,8 @@ def incident_add(request):
         if request.method == 'POST':
             context['form'] = AddIncidentForm(request.POST)
             if context['form'].is_valid():
-                data = context['form'].cleaned_data
-                theme = data['theme']
-                description = data['description']
-                user = request.user
-                fio = data['fio']
-                phone = data['phone']
-                pc = data['pc']
-                room = data['room']
-                area = data['area']
-                department = data['department']
-                incident = Incident(
-                    theme = theme,
-                    description = description,
-                    user = user,
-                    fio = fio,
-                    phone = phone,
-                    pc = pc,
-                    room = room,
-                    area = area,
-                    department = department,
-                )
+                incident = context['form'].save(commit = False)
+                incident.user = request.user
                 incident.save()
                 return redirect(reverse('incident-view', kwargs = {'incident_id': incident.pk}))
             else: # form is not valid
@@ -183,14 +164,12 @@ def incident(request, incident_id = None):
                 if 'change' in request.POST:
                     # change status
                     if context['form'].is_valid():
-                        data = context['form'].cleaned_data
-                        status = data['status']
-                        incident.status = status
+                        incident.status = context['form'].cleaned_data['status']
                         incident.save()
                         IncidentHistory.objects.create(
                             incident = incident,
                             modified_at = datetime.datetime.utcnow().replace(tzinfo = utc),
-                            status = status,
+                            status = incident.status,
                             user = request.user
                         )
                         return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
@@ -200,13 +179,10 @@ def incident(request, incident_id = None):
                 if 'add_comment' in request.POST:
                     # add comment
                     if context['form_comment'].is_valid():
-                        data = context['form_comment'].cleaned_data
-                        comment = data['comment']
-                        IncidentComment.objects.create(
-                            user = request.user,
-                            comment = comment,
-                            incident = incident
-                        )
+                        comment = context['form_comment'].save(commit = False)
+                        comment.user = request.user
+                        comment.incident = incident
+                        comment.save()
                         return redirect(reverse('incident-view', kwargs = {'incident_id': incident_id}))
                     else:
                         context['errors'].append(u'Произошла ошибка при создании комментария. Поле должно быть заполнено.')
