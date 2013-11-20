@@ -3,7 +3,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 def send_email(subject, body, msg_to, msg_from = u''):
-    msg = MIMEText(body.encode('utf-8'))
+    msg = MIMEText(body.encode('utf-8'), "text/html", "utf-8")
     msg['Subject'] = subject
     msg['From'] = msg_from
     msg['To'] = msg_to

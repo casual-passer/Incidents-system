@@ -216,7 +216,7 @@ def incident(request, incident_id = None):
                                         msg_to = p.email,
                                         msg_from = settings.EMAIL_FROM)
                                     context['email_messages'].append(u'Отправлен e-mail для %s на %s' % (p.name, p.email))
-                                except:
+                                except smtplib.SMTPException:
                                     context['email_messages_errors'].append(u'Ошибка отправки e-mail для %s на %s' % (p.name, p.email))
                         incident.save()
                         if len(context['email_messages']) or len(context['email_messages_errors']):
