@@ -23,21 +23,37 @@ class Status(AbstractModel):
 
     name = models.CharField(max_length = 128)
 
+    class Meta:
+        verbose_name = u'Статус'
+        verbose_name_plural = u'Статусы'
+
 
 class Area(AbstractModel):
 
     name = models.CharField(max_length = 128)
+
+    class Meta:
+        verbose_name = u'Тематика'
+        verbose_name_plural = u'Тематики'
 
 
 class Department(AbstractModel):
 
     name = models.CharField(max_length = 128)
 
+    class Meta:
+        verbose_name = u'Отдел'
+        verbose_name_plural = u'Отделы'
+
 
 class Performer(AbstractModel):
 
     name = models.CharField(max_length = 128)
     email = models.CharField(max_length = 128)
+
+    class Meta:
+        verbose_name = u'Исполнитель'
+        verbose_name_plural = u'Исполнители'
 
 
 class Incident(AbstractModel):
@@ -74,6 +90,8 @@ class Incident(AbstractModel):
 
     class Meta:
         ordering = ('-pk', '-created_at', )
+        verbose_name = u'Инцидент'
+        verbose_name_plural = u'Инциденты'
 
 
 class IncidentHistory(models.Model):
@@ -88,6 +106,8 @@ class IncidentHistory(models.Model):
 
     class Meta:
         ordering = ('-modified_at', )
+        verbose_name = u'История статусов'
+        verbose_name_plural = u'История статусов'
 
 
 class IncidentComment(models.Model):
@@ -101,3 +121,5 @@ class IncidentComment(models.Model):
 
     class Meta:
         ordering = ('-created_at', )
+        verbose_name = u'Комментарий'
+        verbose_name_plural = u'Комментарии'
