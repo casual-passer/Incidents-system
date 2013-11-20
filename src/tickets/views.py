@@ -95,6 +95,17 @@ def incident_add(request):
                 incident = context['form'].save(commit = False)
                 incident.user = request.user
                 incident.save()
+                path = ('http',
+                    ('', 's')[request.is_secure()],
+                    '://',
+                    request.META.get('HTTP_HOST', 'unknown'),
+                    reverse('incident-view', kwargs = {'incident_id': incident.pk}))
+                path = ''.join(path)
+                send_email(
+                    subject = u'Новая запись',
+                    body = u'Тема: %s.\n%s' % (incident.theme, path),
+                    msg_to = settings.EMAIL_TO_NEW_INCIDENT,
+                    msg_from = settings.EMAIL_FROM)
                 return redirect(reverse('incident-view', kwargs = {'incident_id': incident.pk}))
             else: # form is not valid
                 context['errors'].append(u'Заполните все требуемые поля')
@@ -198,7 +209,7 @@ def incident(request, incident_id = None):
                         # first remove all which exists
                         incident.performers.clear()
                         # and add new
-                        path = full_path = ('http',
+                        path = ('http',
                             ('', 's')[request.is_secure()],
                             '://',
                             request.META.get('HTTP_HOST', 'unknown'),
