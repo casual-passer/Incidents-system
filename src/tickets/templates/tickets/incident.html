@@ -78,6 +78,15 @@
                     </tr>
                     {% endfor %}
                 {% endif %}
+            {% else %}
+                <tr>
+                    <td class="span1">Исполнители:</td>
+                    <td>
+                        {% for p in incident.performers.all %}
+                            <span class="label">{{ p }}</span>
+                        {% endfor %}
+                    </td>
+                </tr>
             {% endif %}
             <tr>
                 <td class="span1">Тема:</td>
