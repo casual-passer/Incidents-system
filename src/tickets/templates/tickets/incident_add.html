@@ -1,5 +1,7 @@
 {% extends "tickets/base.html" %}
 
+{% block title %}{{ block.super }} - Добавление инцидента{% endblock %}
+
 {% block body %}
     <form action="." method="POST">{% csrf_token %}
         <div class="control-group">

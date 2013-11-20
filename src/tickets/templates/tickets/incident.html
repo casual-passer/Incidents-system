@@ -1,5 +1,7 @@
 {% extends "tickets/base.html" %}
 
+{% block title %}{{ block.super }} - Информация об инциденте{% endblock %}
+
 {% block body %}
 
     {% if incident %}

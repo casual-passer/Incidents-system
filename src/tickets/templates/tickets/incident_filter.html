@@ -1,5 +1,7 @@
 {% extends "tickets/base.html" %}
 
+{% block title %}{{ block.super }} - Фильтр инцидентов{% endblock %}
+
 {% block body %}
     <form action="." method="POST">{% csrf_token %}
         <div>
