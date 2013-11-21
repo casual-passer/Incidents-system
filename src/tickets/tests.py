@@ -121,6 +121,23 @@ class LoginTest(TestCase):
         response = self.client.get(reverse('main-view'))
         self.assertRedirects(response, reverse('login-view'))
 
+    def test_login_incorrect_form_not_cleared(self):
+        csrf_token = _get_csrf_token(self, 'login-view')
+        response = self.client.post(reverse('login-view'), {
+            'username': 'user',
+            'password': '123',
+            'csrfmiddlewaretoken': csrf_token
+            })
+        self.assertEqual(response.context['errors'], [u'Неправильный логин и/или пароль'])
+        self.assertEqual(response.context['login_form']['username'].value(), 'user')
+        response = self.client.post(reverse('login-view'), {
+            'username': 'user123',
+            'password': '',
+            'csrfmiddlewaretoken': csrf_token
+            })
+        self.assertEqual(response.context['errors'], [u'Заполните все поля'])
+        self.assertEqual(response.context['login_form']['username'].value(), 'user123')
+
 
 class AddIncidentFormTest(TestCase):
 

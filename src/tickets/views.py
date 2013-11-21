@@ -12,7 +12,7 @@ from django.utils.timezone import utc
 from django.conf import settings
 
 from .models import Incident, IncidentHistory, Status, Area, Department, IncidentComment
-from .forms import AddIncidentForm, ModifyIncidentForm, CommentIncidentForm, IncidentFilterForm, IncidentPerformersForm
+from .forms import AddIncidentForm, ModifyIncidentForm, CommentIncidentForm, IncidentFilterForm, IncidentPerformersForm, LoginForm
 from .utils import send_email
 
 import datetime
@@ -34,23 +34,25 @@ def login(request):
     context = {}
     context.update(csrf(request))
     context['errors'] = []
+    context['login_form'] = LoginForm(request.POST or None)
     if request.user.is_authenticated():
         return redirect(reverse('main-view'))
     if request.method == 'POST':
-        username = request.POST.get('username', '')
-        password = request.POST.get('password', '')
-        user = auth.authenticate(username = username, password = password)
-        if user:
-            if user.is_active:
-                auth.login(request, user)
-                return redirect(reverse('main-view'))
-            else: # user is not active
-                context['errors'].append(u'Аккаунт отключен')
-        else: # invalid login and/or password
-            context['errors'].append(u'Неправильный логин и/или пароль')
-            return render(request, 'tickets/login.html', context)
-    else: # not POST
-        return render(request, 'tickets/login.html', context)
+        if context['login_form'].is_valid():
+            username = context['login_form'].cleaned_data.get('username')
+            password = context['login_form'].cleaned_data.get('password')
+            user = auth.authenticate(username = username, password = password)
+            if user:
+                if user.is_active:
+                    auth.login(request, user)
+                    return redirect(reverse('main-view'))
+                else: # user is not active
+                    context['errors'].append(u'Аккаунт отключен')
+            else: # invalid login and/or password
+                context['errors'].append(u'Неправильный логин и/или пароль')
+        else: # for is not valid
+            context['errors'].append(u'Заполните все поля')
+    return render(request, 'tickets/login.html', context)
 
 def logout(request):
     auth.logout(request)

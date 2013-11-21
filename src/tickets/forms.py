@@ -86,3 +86,8 @@ class IncidentPerformersForm(ModelForm):
         labels = {
             'performers': u'Исполнители'
         }
+
+class LoginForm(forms.Form):
+
+    username = forms.CharField(label = u'Логин')
+    password = forms.CharField(label = u'Пароль', widget = forms.PasswordInput())
