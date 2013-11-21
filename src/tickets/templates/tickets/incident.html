@@ -99,18 +99,10 @@
         </table>
     {% endif %}
 
-
-    {% if form_comment %}
-        <form action="." method="POST">{% csrf_token %}
-            <div class="text-center">
-                {{ form_comment.comment.label }}
-            </div>
-            {{ form_comment.comment }}
-            <center><input type="submit" class="btn btn-primary span4" value="Добавить комментарий" name="add_comment"/></center>
-        </form>
-    {% endif %}
-
     {% if comments %}
+        <div class="text-center">
+            Комментарии
+        </div>
         <table class="table table-bordered table-hover">
         {% for comment in comments %}
             <tr>
@@ -126,5 +118,15 @@
             </tr>
         {% endfor %}
         </table>
+    {% endif %}
+
+    {% if form_comment %}
+        <form action="." method="POST">{% csrf_token %}
+            <div class="text-center">
+                {{ form_comment.comment.label }}
+            </div>
+            {{ form_comment.comment }}
+            <center><input type="submit" class="btn btn-primary span4" value="Добавить комментарий" name="add_comment"/></center>
+        </form>
     {% endif %}
 {% endblock %}

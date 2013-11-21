@@ -116,7 +116,7 @@ class IncidentComment(models.Model):
     user = models.ForeignKey(User)
     comment = models.TextField(blank = False)
 
-    def __unicode(self):
+    def __unicode__(self):
         return unicode(self.comment)
 
     class Meta:

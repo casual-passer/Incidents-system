@@ -55,7 +55,7 @@ class CommentIncidentForm(ModelForm):
             'comment': u'Комментарий'
         }
         widgets = {
-            'comment': forms.Textarea(attrs = {'class': 'span12'})
+            'comment': forms.Textarea(attrs = {'class': 'span12', 'placeholder': u'Комментарий'})
         }
 
 class IncidentFilterForm(forms.Form):
