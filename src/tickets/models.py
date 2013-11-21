@@ -65,7 +65,7 @@ class Incident(AbstractModel):
     user = models.ForeignKey(User)
     fio = models.CharField(max_length = 128)
     phone = models.CharField(max_length = 128)
-    pc = models.CharField(max_length = 128)
+    pc = models.CharField(max_length = 128, blank = True)
     room = models.CharField(max_length = 128, blank = True)
 
     status = models.ForeignKey(Status)

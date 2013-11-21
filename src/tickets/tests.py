@@ -157,7 +157,7 @@ class AddIncidentFormTest(TestCase):
             'fio': u'Иванов А.А.',
             #'room': '123',
             'phone': '111',
-            'pc': '4567',
+            #'pc': '4567',
             'department': 1,
             'area': 1,
             'save': 1,

@@ -14,7 +14,7 @@ class AddIncidentForm(ModelForm):
             'description': u'Описание*',
             'fio': u'ФИО*',
             'phone': u'Номер телефона*',
-            'pc': u'Номер компьютера*',
+            'pc': u'Номер компьютера',
             'room': u'Номер комнаты',
             'area': u'Тематика*',
             'department': u'Отдел*',
