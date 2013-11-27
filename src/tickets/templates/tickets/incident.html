@@ -44,6 +44,22 @@
                 <td class="span1">Пользователь:</td>
                 <td>{{ incident.user }}</td>
             </tr>
+            <tr>
+                <td class="span1">ФИО:</td>
+                <td>{{ incident.fio }}</td>
+            </tr>
+            <tr>
+                <td class="span1">Телефон:</td>
+                <td>{{ incident.phone }}</td>
+            </tr>
+            <tr>
+                <td class="span1">Номер компьютера:</td>
+                <td>{{ incident.pc }}</td>
+            </tr>
+            <tr>
+                <td class="span1">Комната:</td>
+                <td>{{ incident.room }}</td>
+            </tr>
             {% if form_performers %}
                 <tr>
                     <td class="span1">Исполнители:</td>
