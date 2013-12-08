@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 
 import models
+from datetime import date
 
 
 def _generate_default_data(self):
@@ -15,9 +16,10 @@ def _generate_default_data(self):
     self.user = User.objects.create_user('user', 'no@no.com', 'user')
     self.admin = User.objects.create_user('admin', 'no@no.com', 'admin')
     self.client = Client(enforce_csrf_checks = True)
+    self.today = date.today()
 
 
-def _add_incident(self, area):
+def _add_incident(self, area, till_date='1.1.2000'):
     response = self.client.get(reverse('incident-add-view'))
     csrf_token = '%s' % response.context['csrf_token'].encode('utf-8')
     response = self.client.post(reverse('incident-add-view'), {
@@ -29,6 +31,7 @@ def _add_incident(self, area):
         'pc': '1234',
         'department': self.department.pk,
         'area': area.pk,
+        'till_date': till_date,
         'save': '1',
         'csrfmiddlewaretoken': csrf_token
     })
@@ -159,6 +162,7 @@ class AddIncidentFormTest(TestCase):
             'phone': '111',
             'pc': '4567',
             'department': self.department.pk,
+            'till_date': '1.1.2000',
             'area': self.area.pk,
             'save': '1',
             'csrfmiddlewaretoken': self.csrf_token
@@ -176,6 +180,7 @@ class AddIncidentFormTest(TestCase):
             'phone': '111',
             #'pc': '4567',
             'department': 1,
+            'till_date': '1.1.2000',
             'area': 1,
             'save': 1,
             'csrfmiddlewaretoken': self.csrf_token
@@ -391,6 +396,7 @@ class IncidentDetailsTest(TestCase):
             'pc': '4567',
             'department': self.department.pk,
             'area': self.area.pk,
+            'till_date': '1.1.2000',
             'save': '1',
             'csrfmiddlewaretoken': csrf_token
         })
@@ -597,6 +603,46 @@ class FilterTest(TestCase):
         self.assertEqual(len(response.context['incidents']), 1)
         response = self.client.post(reverse('incident-filter-view'), {
             'area': [3],
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 0)
+        self.client.logout()
+
+    def test_filter_date_range(self):
+        self.client.login(username = 'admin', password = 'admin')
+        _add_incident(self, area = self.areas[0], till_date='1.1.2010')
+        _add_incident(self, area = self.areas[0], till_date='1.2.2010')
+        _add_incident(self, area = self.areas[0], till_date='1.1.2011')
+        _add_incident(self, area = self.areas[0], till_date='1.2.2011')
+        csrf_token = _get_csrf_token(self, 'incident-filter-view')
+        response = self.client.post(reverse('incident-filter-view'), {
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 4)
+        response = self.client.post(reverse('incident-filter-view'), {
+            'till_date_start': '1.1.2011',
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 2)
+        response = self.client.post(reverse('incident-filter-view'), {
+            'till_date_start': '1.2.2011',
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 1)
+        response = self.client.post(reverse('incident-filter-view'), {
+            'till_date_start': '1.1.2011',
+            'till_date_end': '1.1.2011',
+            'filter': 1,
+            'csrfmiddlewaretoken': csrf_token
+        })
+        self.assertEqual(len(response.context['incidents']), 1)
+        response = self.client.post(reverse('incident-filter-view'), {
+            'till_date_start': '2.1.2011',
+            'till_date_end': '2.1.2011',
             'filter': 1,
             'csrfmiddlewaretoken': csrf_token
         })

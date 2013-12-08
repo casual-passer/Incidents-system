@@ -2,9 +2,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from time import strftime
-import uuid
-import os
+from .utils import tomorrow
+
 
 class AbstractModel(models.Model):
 
@@ -73,6 +72,8 @@ class Incident(AbstractModel):
     department = models.ForeignKey(Department)
 
     performers = models.ManyToManyField(Performer)
+
+    till_date = models.DateField(default=tomorrow)
 
     def save(self, *args, **kwargs):
         in_db = True

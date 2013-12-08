@@ -262,11 +262,15 @@ def incident_filter(request):
                     if request.user in group_admin.user_set.all():
                         incidents = Incident.objects.all()
                     else:
-                        incidents = Incident.objects.filter(user = request.user)
+                        incidents = Incident.objects.filter(user=request.user)
                     if 'status' in data and len(data['status']):
-                        incidents = incidents.filter(status__in = data['status'])
+                        incidents = incidents.filter(status__in=data['status'])
                     if 'area' in data and len(data['area']):
-                        incidents = incidents.filter(area__in = data['area'])
+                        incidents = incidents.filter(area__in=data['area'])
+                    if 'till_date_start' in data and data['till_date_start']:
+                        incidents = incidents.filter(till_date__gte=data['till_date_start'])
+                    if 'till_date_end' in data and data['till_date_end']:
+                        incidents = incidents.filter(till_date__lte=data['till_date_end'])
                     context['incidents'] = incidents
                 else:
                     context['errors'].append(u'Произошла ошибка')

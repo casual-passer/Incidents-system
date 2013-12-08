@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import smtplib
 from email.mime.text import MIMEText
+from datetime import date, timedelta
 
 def send_email(subject, body, msg_to, msg_from = u''):
     msg = MIMEText(body.encode('utf-8'), "text/html", "utf-8")
@@ -11,3 +12,8 @@ def send_email(subject, body, msg_to, msg_from = u''):
     s.sendmail(msg_from, msg_to, msg.as_string())
     s.quit()
 
+def today():
+    return date.today()
+
+def tomorrow():
+    return date.today() + timedelta(days=1)
