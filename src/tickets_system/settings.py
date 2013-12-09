@@ -95,6 +95,7 @@ APPEND_SLASH = True
 
 EMAIL_FROM = 'root@example.com' #CHANGEME
 EMAIL_TO_NEW_INCIDENT = 'root@example.com' #CHANGEME
+STATIC_ROOT = os.path.join(BASE_DIR, '..', '..', 'static')
 
 try:
     from local_settings import *
