@@ -9,7 +9,7 @@
                 <tr>
                     <td>
                         <span class="row-fluid">
-                            <span class="span1">
+                            <span class="span2">
                                 {{ form.area.label }}
                             </span>
                             {% for f in form.area %}
@@ -21,7 +21,7 @@
                 <tr>
                     <td>
                         <span class="row-fluid">
-                            <span class="span1">
+                            <span class="span2">
                                 {{ form.status.label }}
                             </span>
                             {% for s in form.status %}
@@ -33,8 +33,13 @@
                 <tr>
                     <td>
                         <span class="row-fluid">
-                            {{ form.till_date_start.label }} {{ form.till_date_start }}
-                            {{ form.till_date_end.label }} {{ form.till_date_end }}
+                            <span class="span2">
+                                Срок решения
+                            </span>
+                            <span class="span9">
+                                {{ form.till_date_start.label }} {{ form.till_date_start }}
+                                {{ form.till_date_end.label }} {{ form.till_date_end }}
+                            </span>
                         </span>
                     </td>
                 </tr>
