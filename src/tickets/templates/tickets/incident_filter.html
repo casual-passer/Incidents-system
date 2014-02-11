@@ -8,34 +8,40 @@
             <table class="table">
                 <tr>
                     <td>
-                        <span class="row-fluid">
+                        <span class="row">
                             <span class="span2">
                                 {{ form.area.label }}
                             </span>
+                        </span>
+                        <span class="row">
                             {% for f in form.area %}
-                                <span class="span2">{{ f }}</span>
+                                <span class="span3">{{ f }}</span>
                             {% endfor %}
                         </span>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <span class="row-fluid">
+                        <span class="row">
                             <span class="span2">
                                 {{ form.status.label }}
                             </span>
+                        </span>
+                        <span class="row">
                             {% for s in form.status %}
-                                <span class="span2">{{ s }}</span>
+                                <span class="span3">{{ s }}</span>
                             {% endfor %}
                         </span>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <span class="row-fluid">
+                        <span class="row">
                             <span class="span2">
                                 Срок решения
                             </span>
+                        </span>
+                        <span class="row">
                             <span class="span9">
                                 {{ form.till_date_start.label }} {{ form.till_date_start }}
                                 {{ form.till_date_end.label }} {{ form.till_date_end }}
