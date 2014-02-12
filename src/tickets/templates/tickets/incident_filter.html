@@ -3,7 +3,7 @@
 {% block title %}{{ block.super }} - Фильтр инцидентов{% endblock %}
 
 {% block body %}
-    <form action="." method="POST">{% csrf_token %}
+    <form action="." method="GET">
         <div>
             <table class="table">
                 <tr>
@@ -59,4 +59,5 @@
     </form>
     <br />
     {% include "tickets/incidents_list.html" %}
+    {% include "tickets/incidents_pagination.html" with view_name="incident-filter-view" %}
 {% endblock %}

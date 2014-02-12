@@ -1,0 +1,10 @@
+{% if incidents.has_previous %}
+    <a href="{% url view_name incidents.previous_page_number %}?{{ request.GET.urlencode }}" class="btn btn-primary">Пред. стр.</a>
+{% else %}
+    <a class="btn disabled" href="#">Пред. стр.</a>
+{% endif %}
+{% if incidents.has_next %}
+    <a href="{% url view_name incidents.next_page_number %}?{{ request.GET.urlencode }}" class="btn btn-primary">След. стр.</a>
+{% else %}
+    <a class="btn disabled" href="#">След. стр.</a>
+{% endif %}

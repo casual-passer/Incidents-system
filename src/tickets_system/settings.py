@@ -23,6 +23,10 @@ SECRET_KEY = '5oczc$%d7v3pu(yabp3vzow9ic-29+54eoy*y+j%p1ma-=3cfs'
 DEBUG = True
 
 TEMPLATE_DEBUG = True
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
+    'django.core.context_processors.request',
+)
 
 ALLOWED_HOSTS = []
 

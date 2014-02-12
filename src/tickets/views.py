@@ -19,7 +19,7 @@ import datetime
 
 
 def paginate_records(records_list, page_id):
-    paginator = Paginator(records_list, per_page = 20)
+    paginator = Paginator(records_list, per_page=20)
     try:
         paginated_list = paginator.page(page_id)
     except EmptyPage:
@@ -245,13 +245,12 @@ def incident(request, incident_id = None):
     else:
         return redirect(reverse('login-view'))
 
-def incident_filter(request):
+def incident_filter(request, page=1):
     if request.user.is_authenticated():
         context = {}
-        context.update(csrf(request))
         context['errors'] = []
-        context['form'] = IncidentFilterForm(request.POST or None)
-        if request.method == 'POST':
+        context['form'] = IncidentFilterForm(request.GET or None)
+        if request.method == 'GET':
             if 'filter' in context['form'].data:
                 if context['form'].is_valid():
                     data = context['form'].cleaned_data
@@ -271,10 +270,10 @@ def incident_filter(request):
                         incidents = incidents.filter(till_date__gte=data['till_date_start'])
                     if 'till_date_end' in data and data['till_date_end']:
                         incidents = incidents.filter(till_date__lte=data['till_date_end'])
-                    context['incidents'] = incidents
+                    context['incidents'] = paginate_records(incidents, page)
                 else:
                     context['errors'].append(u'Произошла ошибка')
-        else: # not POST
+        else: # not GET
             pass
         return render(request, 'tickets/incident_filter.html', context)
     else:

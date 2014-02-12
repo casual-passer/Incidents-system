@@ -31,13 +31,3 @@
         {% endfor %}
     </tbody>
 </table>
-{% if incidents.has_previous %}
-    <a href="{% url "main-page-view" incidents.previous_page_number %}" class="btn btn-primary">Пред. стр.</a>
-{% else %}
-    <a class="btn disabled" href="#">Пред. стр.</a>
-{% endif %}
-{% if incidents.has_next %}
-    <a href="{% url "main-page-view" incidents.next_page_number %}" class="btn btn-primary">След. стр.</a>
-{% else %}
-    <a class="btn disabled" href="#">След. стр.</a>
-{% endif %}

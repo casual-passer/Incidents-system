@@ -527,18 +527,14 @@ class FilterTest(TestCase):
         _add_incident(self, area = self.areas[0])
         _add_incident(self, area = self.areas[1])
         _add_incident(self, area = self.areas[2])
-        csrf_token = _get_csrf_token(self, 'incident-filter-view')
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 3)
         self.client.logout()
         self.client.login(username = 'admin', password = 'admin')
-        csrf_token = _get_csrf_token(self, 'incident-filter-view')
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 6)
         self.client.logout()
@@ -557,31 +553,26 @@ class FilterTest(TestCase):
         i = models.Incident.objects.get(pk = 3)
         i.status = self.statuses[0]
         i.save()
-        csrf_token = _get_csrf_token(self, 'incident-filter-view')
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'area': [1, 2, 3],
             'status' : [1, 2, 3],
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 3)
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'area': [1, 2],
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 2)
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'status': [2, 3],
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 2)
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'area': [1],
             'status': [1, 2],
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 0)
         self.client.logout()
@@ -594,17 +585,14 @@ class FilterTest(TestCase):
         i = models.Incident.objects.get(pk = 5)
         i.status = self.statuses[1]
         i.save()
-        csrf_token = _get_csrf_token(self, 'incident-filter-view')
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'area': [1],
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 1)
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'area': [3],
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 0)
         self.client.logout()
@@ -615,38 +603,50 @@ class FilterTest(TestCase):
         _add_incident(self, area = self.areas[0], till_date='1.2.2010')
         _add_incident(self, area = self.areas[0], till_date='1.1.2011')
         _add_incident(self, area = self.areas[0], till_date='1.2.2011')
-        csrf_token = _get_csrf_token(self, 'incident-filter-view')
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 4)
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'till_date_start': '1.1.2011',
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 2)
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'till_date_start': '1.2.2011',
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 1)
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'till_date_start': '1.1.2011',
             'till_date_end': '1.1.2011',
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 1)
-        response = self.client.post(reverse('incident-filter-view'), {
+        response = self.client.get(reverse('incident-filter-view'), {
             'till_date_start': '2.1.2011',
             'till_date_end': '2.1.2011',
             'filter': 1,
-            'csrfmiddlewaretoken': csrf_token
         })
         self.assertEqual(len(response.context['incidents']), 0)
+        self.client.logout()
+
+    def test_filter_pagination(self):
+        self.client.login(username = 'admin', password = 'admin')
+        for i in range(45):
+            _add_incident(self, area = self.areas[0], till_date='1.1.2010')
+        response = self.client.get(reverse('incident-filter-view', kwargs={'page': 1}), {
+            'filter': 1,
+        })
+        self.assertEqual(len(response.context['incidents']), 20)
+        response = self.client.get(reverse('incident-filter-view', kwargs={'page': 2}), {
+            'filter': 1,
+        })
+        self.assertEqual(len(response.context['incidents']), 20)
+        response = self.client.get(reverse('incident-filter-view', kwargs={'page': 3}), {
+            'filter': 1,
+        })
+        self.assertEqual(len(response.context['incidents']), 5)
         self.client.logout()
 
 class PerformerTest(TestCase):
