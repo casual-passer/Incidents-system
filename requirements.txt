@@ -1,3 +1,9 @@
 Django==1.6
+PyYAML==3.10
 South==0.8.4
+coverage==3.7.1
+python-coveralls==2.4.2
+requests==2.2.1
+sh==1.09
+six==1.5.2
 wsgiref==0.1.2
