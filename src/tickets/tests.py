@@ -49,12 +49,12 @@ def _create_group_with_users(group_name, users = []):
         g.user_set.add(User.objects.get(username = u))
 
 
-class ModelsTest(TestCase):
+class IncidentModelTest(TestCase):
 
     def setUp(self):
         _generate_default_data(self)
 
-    def test_incident_save(self):
+    def test_incident_save_with_default_status(self):
         incident = models.Incident(
             theme = u'Проблема',
             area = self.area,
@@ -66,7 +66,7 @@ class ModelsTest(TestCase):
         self.assertEqual(hasattr(incident, 'status'), True)
         self.assertEqual(incident.status.pk, 1)
 
-    def test_incident_create(self):
+    def test_incident_save_with_status_supplied(self):
         incident = models.Incident(
             theme = u'Проблема',
             status = self.status,
@@ -80,7 +80,7 @@ class ModelsTest(TestCase):
         incident.delete()
         self.assertEqual(models.Incident.objects.count(), 0)
 
-    def test_incident_history_default(self):
+    def test_incident_save_status_history(self):
         incident = models.Incident(
             theme = u'Проблема',
             status = self.status,
@@ -200,6 +200,24 @@ class AddIncidentFormTest(TestCase):
             'department': 1,
             'area': 1,
             'save': 1,
+            'csrfmiddlewaretoken': self.csrf_token
+        })
+        self.assertEqual(len(response.context['errors']), 1)
+        self.assertEqual(len(models.Incident.objects.all()), 0)
+
+    def test_filled_form_with_very_long_strings(self):
+        self.assertEqual(len(models.Incident.objects.all()), 0)
+        response = self.client.post(reverse('incident-add-view'), {
+            'theme': 'x'*129,
+            'description': 'Some text',
+            'fio': u'Иванов А.А.',
+            'room': '1'*129,
+            'phone': '111',
+            'pc': '4567',
+            'department': self.department.pk,
+            'till_date': '1.1.2000',
+            'area': self.area.pk,
+            'save': '1',
             'csrfmiddlewaretoken': self.csrf_token
         })
         self.assertEqual(len(response.context['errors']), 1)
