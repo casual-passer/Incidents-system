@@ -2,6 +2,7 @@
 from django.test import TestCase
 from django.test import Client
 from django.core.urlresolvers import reverse
+from django.core import mail
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 
@@ -167,6 +168,7 @@ class AddIncidentFormTest(TestCase):
             'save': '1',
             'csrfmiddlewaretoken': self.csrf_token
         })
+        self.assertEqual(len(mail.outbox), 1)
         self.assertRedirects(response, reverse('incident-view', kwargs = {'incident_id': 1}))
         self.assertEqual(len(models.Incident.objects.all()), 1)
 
@@ -662,6 +664,7 @@ class PerformerTest(TestCase):
     def test_assign_performers(self):
         self.client.login(username = 'superadmin', password = 'superadmin')
         _add_incident(self, self.area)
+        self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 0)
         csrf_token = _get_csrf_token(self, 'incident-view', kwargs = {'incident_id': 1})
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
@@ -669,18 +672,21 @@ class PerformerTest(TestCase):
             'add_performers': '1',
             'csrfmiddlewaretoken': csrf_token
             })
+        self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 1)
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'performers': ('1', '2',),
             'add_performers': '1',
             'csrfmiddlewaretoken': csrf_token
             })
+        self.assertEqual(len(mail.outbox), 4)
         self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 2)
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'performers': ('3', ),
             'add_performers': '1',
             'csrfmiddlewaretoken': csrf_token
             })
+        self.assertEqual(len(mail.outbox), 5)
         self.assertEqual(models.Incident.objects.get(pk = 1).performers.count(), 1)
         response = self.client.post(reverse('incident-view', kwargs = {'incident_id': 1}), {
             'add_performers': '1',

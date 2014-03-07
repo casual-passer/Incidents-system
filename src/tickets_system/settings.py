@@ -97,6 +97,7 @@ TEMPLATE_DIRS = (
 
 APPEND_SLASH = True
 
+EMAIL_HOST = '10.133.20.3'
 EMAIL_FROM = 'root@example.com' #CHANGEME
 EMAIL_TO_NEW_INCIDENT = 'root@example.com' #CHANGEME
 STATIC_ROOT = os.path.join(BASE_DIR, '..', '..', 'static')

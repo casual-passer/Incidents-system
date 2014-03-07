@@ -13,7 +13,9 @@ from django.conf import settings
 
 from .models import Incident, IncidentHistory, Status, Area, Department, IncidentComment
 from .forms import AddIncidentForm, ModifyIncidentForm, CommentIncidentForm, IncidentFilterForm, IncidentPerformersForm, LoginForm
-from .utils import send_email
+
+from django.core.mail import send_mail
+import smtplib
 
 import datetime
 
@@ -103,11 +105,12 @@ def incident_add(request):
                     request.META.get('HTTP_HOST', 'unknown'),
                     reverse('incident-view', kwargs = {'incident_id': incident.pk}))
                 path = ''.join(path)
-                send_email(
+                send_mail(
                     subject = u'Новая запись',
-                    body = u'Тема: %s.\n%s' % (incident.theme, path),
-                    msg_to = settings.EMAIL_TO_NEW_INCIDENT,
-                    msg_from = settings.EMAIL_FROM)
+                    message = u'Тема: %s.\n%s' % (incident.theme, path),
+                    from_email = settings.EMAIL_FROM,
+                    recipient_list = (settings.EMAIL_TO_NEW_INCIDENT,),
+                    )
                 return redirect(reverse('incident-view', kwargs = {'incident_id': incident.pk}))
             else: # form is not valid
                 context['errors'].append(u'Заполните все требуемые поля')
@@ -223,11 +226,12 @@ def incident(request, incident_id = None):
                             incident.performers.add(p)
                             if p.email:
                                 try:
-                                    send_email(
+                                    send_mail(
                                         subject = u'Новая запись',
-                                        body = u'Тема: %s.\n%s' % (incident.theme, path),
-                                        msg_to = p.email,
-                                        msg_from = settings.EMAIL_FROM)
+                                        message = u'Тема: %s.\n%s' % (incident.theme, path),
+                                        from_email = settings.EMAIL_FROM,
+                                        recipient_list = (p.email,),
+                                        )
                                     context['email_messages'].append(u'Отправлен e-mail для %s на %s' % (p.name, p.email))
                                 except smtplib.SMTPException:
                                     context['email_messages_errors'].append(u'Ошибка отправки e-mail для %s на %s' % (p.name, p.email))
