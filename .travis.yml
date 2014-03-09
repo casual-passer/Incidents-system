@@ -5,6 +5,6 @@ install:
     - pip install -r requirements.txt
 script:
     - python src/manage.py test tickets
-    - coverage run src/manage.py test tickets
+    - coverage run --source='.' src/manage.py test tickets
 after_success:
     - coveralls
