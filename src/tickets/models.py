@@ -76,18 +76,18 @@ class Incident(AbstractModel):
     till_date = models.DateField(default=tomorrow)
 
     def save(self, *args, **kwargs):
-        in_db = True
-        if not self.id:
-            in_db = False
+        in_database = True
+        if not self.pk:
+            in_database = False
             if not hasattr(self, 'status'):
                 (self.status, created) = Status.objects.get_or_create(pk = 1, defaults = {'name': u'Default status'})
         super(Incident, self).save(*args, **kwargs)
-        # if incident did not exist in database, save first status change in incidenthistory table
-        if not in_db:
-            IncidentHistory.objects.create(incident = self, modified_at = self.created_at, status = self.status, user = self.user)
-
-    def __unicode__(self):
-        return self.theme
+        if not in_database:
+            IncidentHistory.objects.create(
+                incident=self,
+                modified_at=self.created_at,
+                status=self.status,
+                user=self.user)
 
     class Meta:
         ordering = ('-pk', '-created_at', )
